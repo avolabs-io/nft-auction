@@ -54,9 +54,11 @@ contract NFTAuction {
     }
 
     function revertPreviousBidAndUpdateHighestBid(uint256 _nftIndex) internal {
-        payable(nftHighestBidders[_nftIndex]).transfer(
-            nftHighestBids[_nftIndex]
-        );
+        if (nftHighestBidders[_nftIndex] != address(0)) {
+            payable(nftHighestBidders[_nftIndex]).transfer(
+                nftHighestBids[_nftIndex]
+            );
+        }
         nftHighestBids[_nftIndex] = msg.value;
         nftHighestBidders[_nftIndex] = msg.sender;
     }
