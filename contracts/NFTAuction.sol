@@ -21,6 +21,7 @@ contract NFTAuction {
         uint256 minPrice
     ) public {
         // Sending our contract the NFT.
+        require(minPrice >0, "Minimum Price cannot be 0");
         IERC721 nftContract = IERC721(nftContractAddress);
         nftContract.safeTransferFrom(msg.sender, address(this), tokenId);
 
