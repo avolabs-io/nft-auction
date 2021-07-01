@@ -3,8 +3,9 @@ pragma solidity 0.8.4;
 
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
-contract NFTAuction {
+contract NFTAuction is IERC721Receiver {
     uint256 public nftIndex;
     mapping(uint256 => IERC721) public nftContracts;
     mapping(uint256 => uint256) public tokenIds;
@@ -92,7 +93,17 @@ contract NFTAuction {
                 nftHighestBidders[_nftIndex],
                 tokenIds[_nftIndex]
             );
-            payable(sellers[_nftIndex]).transfer(nftHighestBids[_nftIndex]);
+            payable(nftSellers[_nftIndex]).transfer(nftHighestBids[_nftIndex]);
         }
+    }
+
+    //ERC721Receiver function to ensure usage of ERC721 function safeTransferFrom
+    function onERC721Received(
+        address,
+        address,
+        uint256,
+        bytes memory
+    ) public virtual override returns (bytes4) {
+        return this.onERC721Received.selector;
     }
 }

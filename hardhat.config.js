@@ -1,6 +1,6 @@
 require("@nomiclabs/hardhat-waffle");
 require("hardhat-gas-reporter");
-
+require("solidity-coverage");
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -27,4 +27,3 @@ module.exports = {
     coinmarketcap: "9aacee3e-7c04-4978-8f93-63198c0fbfef",
   },
 };
-
