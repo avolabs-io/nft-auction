@@ -2,7 +2,8 @@
   "name": "hardhat-project",
   "scripts": {
     "compile": "hardhat compile",
-    "test": "hardhat test"
+    "test": "hardhat test",
+    "coverage": "hardhat coverage"
   },
   "dependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
@@ -11,6 +12,7 @@
     "chai": "^4.3.4",
     "ethers": "^5.4.0",
     "hardhat": "^2.4.1",
-    "hardhat-gas-reporter": "^1.0.4"
+    "hardhat-gas-reporter": "^1.0.4",
+    "solidity-coverage": "^0.7.16"
   }
 }
