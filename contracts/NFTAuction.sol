@@ -29,9 +29,7 @@ contract NFTAuction is IERC721Receiver {
     }
 
     // constructor
-    constructor() {
-        console.log("Hello world");
-    }
+    constructor() {}
 
     function _isMinimumBidMade(address _nftContractAddress, uint256 _tokenId)
         internal
