@@ -44,7 +44,6 @@ describe("NFTAuction Bids", function () {
     });
     let result = await nftAuction.nftContractAuctions(erc721.address, tokenId);
     expect(result.nftHighestBidder).to.equal(user2.address);
-    // const myNumber = BigNumber.from(result);
     expect(result.nftHighestBid.toString()).to.be.equal(
       BigNumber.from(minPrice).toString()
     );

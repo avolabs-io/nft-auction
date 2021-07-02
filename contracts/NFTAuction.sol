@@ -105,8 +105,6 @@ contract NFTAuction is IERC721Receiver {
         //split up revert and update into two methods?
 
         _revertPreviousBidAndUpdateHighestBid(_nftContractAddress, _tokenId);
-
-        console.log(msg.value);
     }
 
     function _updateAuctionEnd(address _nftContractAddress, uint256 _tokenId)
