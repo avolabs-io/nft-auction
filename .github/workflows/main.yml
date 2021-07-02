@@ -1,0 +1,29 @@
+name: Run Contract Tests
+on: push
+jobs:
+  run-contract-tests:
+    name: Run contract tests
+    runs-on: ubuntu-latest
+    steps:
+      # Checks out a copy of your repository on the ubuntu-latest machine
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Setup node 14
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14.16.0
+      - name: Cache dependencies
+        id: cache
+        uses: actions/cache@v2
+        with:
+          path: ./contracts/node_modules
+          key: modules-${{ hashFiles('yarn.lock') }}
+      - name: install node packages
+        if: steps.cache.outputs.cache-hit != 'true'
+        id: install_node_packages
+        run: |
+          yarn
+      - name: run contract tests
+        id: run_contract_tests
+        run: |
+          yarn test
