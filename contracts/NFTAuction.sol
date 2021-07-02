@@ -6,16 +6,6 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
 contract NFTAuction is IERC721Receiver {
-    // uint256 public nftIndex;
-    // mapping(uint256 => IERC721) public nftContracts;
-    // mapping(uint256 => uint256) public tokenIds;
-    // mapping(uint256 => uint256) public minPrices;
-    // mapping(uint256 => uint256) public auctionLengths;
-    // mapping(uint256 => uint256) public auctionEnds;
-    // mapping(uint256 => uint256) public nftHighestBids;
-    // mapping(uint256 => address) public nftHighestBidders;
-    // mapping(uint256 => address) public nftSellers;
-
     mapping(address => Auction) public nftContractAuctions;
 
     //Each Auction is unique to each NFT (contract + id pairing)
