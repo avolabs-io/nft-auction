@@ -6,18 +6,33 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
 contract NFTAuction is IERC721Receiver {
-    uint256 public nftIndex;
-    mapping(uint256 => IERC721) public nftContracts;
-    mapping(uint256 => uint256) public tokenIds;
-    mapping(uint256 => uint256) public minPrices;
-    mapping(uint256 => uint256) public auctionLengths;
-    mapping(uint256 => uint256) public nftHighestBids;
-    mapping(uint256 => address) public nftHighestBidders;
-    mapping(uint256 => address) public nftSellers;
+    // uint256 public nftIndex;
+    // mapping(uint256 => IERC721) public nftContracts;
+    // mapping(uint256 => uint256) public tokenIds;
+    // mapping(uint256 => uint256) public minPrices;
+    // mapping(uint256 => uint256) public auctionLengths;
+    // mapping(uint256 => uint256) public auctionEnds;
+    // mapping(uint256 => uint256) public nftHighestBids;
+    // mapping(uint256 => address) public nftHighestBidders;
+    // mapping(uint256 => address) public nftSellers;
 
-    modifier auctionOngoing(uint256 _nftIndex) {
+    mapping(address => Auction) public nftContractAuctions;
+
+    //Each Auction is unique to each NFT (contract + id pairing)
+    struct Auction {
+        //map token ID to
+        IERC721 _nftContract;
+        mapping(uint256 => uint256) minPrices;
+        mapping(uint256 => uint256) auctionLengths;
+        mapping(uint256 => uint256) auctionEnds;
+        mapping(uint256 => uint256) nftHighestBids;
+        mapping(uint256 => address) nftHighestBidders;
+        mapping(uint256 => address) nftSellers;
+    }
+
+    modifier auctionOngoing(address _nftContractAddress, uint256 _tokenId) {
         require(
-            block.timestamp < auctionLengths[nftIndex],
+            isAuctionOngoing(_nftContractAddress, _tokenId),
             "Auction has ended"
         );
         _;
@@ -38,63 +53,144 @@ contract NFTAuction is IERC721Receiver {
         require(minPrice > 0, "Minimum Price cannot be 0");
         IERC721 nftContract = IERC721(nftContractAddress);
         //Store the token id, token contract and minimum price
-        nftIndex++;
-        nftContracts[nftIndex] = nftContract;
-        tokenIds[nftIndex] = tokenId;
-        minPrices[nftIndex] = minPrice;
-        auctionLengths[nftIndex] = block.timestamp + auctionLength;
-        nftSellers[nftIndex] = msg.sender;
+        nftContractAuctions[nftContractAddress]._nftContract = nftContract;
+        nftContractAuctions[nftContractAddress].minPrices[tokenId] = minPrice;
+        nftContractAuctions[nftContractAddress].auctionLengths[
+            tokenId
+        ] = auctionLength;
+        nftContractAuctions[nftContractAddress].nftSellers[tokenId] = msg
+        .sender;
+
+        //transfer NFT to this smart contract
         nftContract.safeTransferFrom(msg.sender, address(this), tokenId);
     }
 
     // bid functions.
-    function makeBid(uint256 _nftIndex)
+    //Add the functionality that holds the auction until first bid.
+    // the auction time should then kick off
+    //each new bid should add time to the auction length
+    //each new bid should increase by a percentage
+    function makeBid(address _nftContractAddress, uint256 _tokenId)
         public
         payable
-        auctionOngoing(_nftIndex)
+        auctionOngoing(_nftContractAddress, _tokenId)
     {
         require(
-            msg.sender != nftContracts[_nftIndex].ownerOf(tokenIds[_nftIndex]),
+            msg.sender !=
+                nftContractAuctions[_nftContractAddress].nftSellers[_tokenId],
             "Owner cannot bid on own NFT"
         );
         require(
-            msg.value >= minPrices[_nftIndex],
+            msg.value >=
+                nftContractAuctions[_nftContractAddress].minPrices[_tokenId],
             "Bid must be higher than minimum bid"
         );
         require(
-            msg.value >= nftHighestBids[_nftIndex],
-            "Bid must exceed highest bid"
+            msg.value >=
+                (nftContractAuctions[_nftContractAddress].nftHighestBids[
+                    _tokenId
+                ] * 110) /
+                    100,
+            "Bid must be 10% more than previous highest bid"
         );
 
-        revertPreviousBidAndUpdateHighestBid(_nftIndex);
+        updateAuctionEnd(_nftContractAddress, _tokenId);
+
+        //split up revert and update into two methods?
+
+        revertPreviousBidAndUpdateHighestBid(_nftContractAddress, _tokenId);
 
         console.log(msg.value);
     }
 
-    function revertPreviousBidAndUpdateHighestBid(uint256 _nftIndex) internal {
-        if (nftHighestBids[_nftIndex] > 0) {
-            payable(nftHighestBidders[_nftIndex]).transfer(
-                nftHighestBids[_nftIndex]
-            );
+    function updateAuctionEnd(address _nftContractAddress, uint256 _tokenId)
+        internal
+    {
+        if (isFirstBid(_nftContractAddress, _tokenId)) {
+            nftContractAuctions[_nftContractAddress].auctionEnds[_tokenId] =
+                nftContractAuctions[_nftContractAddress].auctionLengths[
+                    _tokenId
+                ] +
+                block.timestamp;
+        } else {
+            nftContractAuctions[_nftContractAddress].auctionEnds[_tokenId] =
+                nftContractAuctions[_nftContractAddress].auctionLengths[
+                    _tokenId
+                ] +
+                nftContractAuctions[_nftContractAddress].auctionEnds[_tokenId];
         }
-        nftHighestBids[_nftIndex] = msg.value;
-        nftHighestBidders[_nftIndex] = msg.sender;
     }
 
-    function settleAuction(uint256 _nftIndex) public {
+    function revertPreviousBidAndUpdateHighestBid(
+        address _nftContractAddress,
+        uint256 _tokenId
+    ) internal {
+        if (!isFirstBid(_nftContractAddress, _tokenId)) {
+            payable(
+                nftContractAuctions[_nftContractAddress].nftHighestBidders[
+                    _tokenId
+                ]
+            ).transfer(
+                nftContractAuctions[_nftContractAddress].nftHighestBids[
+                    _tokenId
+                ]
+            );
+        }
+        nftContractAuctions[_nftContractAddress].nftHighestBids[_tokenId] = msg
+        .value;
+        nftContractAuctions[_nftContractAddress].nftHighestBidders[
+            _tokenId
+        ] = msg.sender;
+    }
+
+    function settleAuction(address _nftContractAddress, uint256 _tokenId)
+        public
+    {
         require(
-            block.timestamp > auctionLengths[_nftIndex],
+            !isAuctionOngoing(_nftContractAddress, _tokenId),
             "Auction is not yet over"
         );
-        if (nftHighestBids[_nftIndex] > minPrices[_nftIndex]) {
+        if (!isFirstBid(_nftContractAddress, _tokenId)) {
             //Send NFT to bidder and payout to seller
-            nftContracts[_nftIndex].safeTransferFrom(
+            nftContractAuctions[_nftContractAddress]
+                ._nftContract
+                .safeTransferFrom(
                 address(this),
-                nftHighestBidders[_nftIndex],
-                tokenIds[_nftIndex]
+                nftContractAuctions[_nftContractAddress].nftHighestBidders[
+                    _tokenId
+                ],
+                _tokenId
             );
-            payable(nftSellers[_nftIndex]).transfer(nftHighestBids[_nftIndex]);
+
+            payable(
+                nftContractAuctions[_nftContractAddress].nftSellers[_tokenId]
+            ).transfer(
+                nftContractAuctions[_nftContractAddress].nftHighestBids[
+                    _tokenId
+                ]
+            );
         }
+    }
+
+    function isFirstBid(address _nftContractAddress, uint256 _tokenId)
+        internal
+        view
+        returns (bool)
+    {
+        return
+            !(nftContractAuctions[_nftContractAddress].nftHighestBids[
+                _tokenId
+            ] > 0);
+    }
+
+    function isAuctionOngoing(address _nftContractAddress, uint256 _tokenId)
+        internal
+        view
+        returns (bool)
+    {
+        return (isFirstBid(_nftContractAddress, _tokenId) ||
+            block.timestamp <
+            nftContractAuctions[_nftContractAddress].auctionEnds[_tokenId]);
     }
 
     //ERC721Receiver function to ensure usage of ERC721 function safeTransferFrom

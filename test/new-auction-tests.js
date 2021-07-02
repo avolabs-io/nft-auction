@@ -1,5 +1,9 @@
 const { expect } = require("chai");
 
+const tokenId = 1;
+const minPrice = 10;
+const auctionLength = 100; //seconds
+
 // Deploy and create a mock erc721 contract.
 // 1 basic test, NFT sent from one person to another works correctly.
 describe("NFTAuction", function () {
@@ -33,7 +37,7 @@ describe("NFTAuction", function () {
     await erc721.connect(user1).approve(nftAuction.address, 1);
     await nftAuction
       .connect(user1)
-      .createNewNftAuction(erc721.address, 1, 10, 100);
+      .createNewNftAuction(erc721.address, tokenId, minPrice, auctionLength);
 
     expect(await erc721.ownerOf(1)).to.equal(nftAuction.address);
   });
