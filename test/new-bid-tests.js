@@ -1,4 +1,4 @@
-const { expect } = require("chai");
+const { expect, assert } = require("chai");
 
 const { BigNumber } = require("ethers");
 // Enable and inject BN dependency
@@ -47,5 +47,56 @@ describe("NFTAuction Bids", function () {
     expect(result.nftHighestBid.toString()).to.be.equal(
       BigNumber.from(minPrice).toString()
     );
+  });
+
+  describe("Function: makeBid", () => {
+    it("1st require: Ensure owner cannot bid on own NFT", async () => {
+      await nftAuction.connect(user2).makeBid(erc721.address, tokenId, {
+        value: minPrice,
+      });
+      let result = await nftAuction.nftContractAuctions(
+        erc721.address,
+        tokenId
+      );
+      assert(result.nftSeller != user2.address);
+    });
+
+    it("2nd require: Ensure initial bid is higher than minimum bid", async () => {
+      // I'm assuming this require is for the initial bid only, because the 3rd require
+      // would ensure all subsequent bids to be bigger than minPrice set by NFT owner
+      await nftAuction.connect(user2).makeBid(erc721.address, tokenId, {
+        value: minPrice + 1,
+      });
+      let result = await nftAuction.nftContractAuctions(
+        erc721.address,
+        tokenId
+      );
+      assert(
+        result.nftHighestBid.toString() > BigNumber.from(minPrice).toString(),
+        "initial bid not higher than minimum bid"
+      );
+    });
+
+    it("3rd require: Ensure bid increment >= 10%", async () => {
+      await nftAuction.connect(user2).makeBid(erc721.address, tokenId, {
+        value: (minPrice * 11) / 10,
+      });
+      let bid = await nftAuction.nftContractAuctions(erc721.address, tokenId);
+      assert(
+        bid.nftHighestBid.toString() >= (BigNumber.from(minPrice) * 11) / 10,
+        "10% or higher bid increment over current highest bid, not met"
+      );
+    });
+    // test for full functionality of makeBid still needed
+  });
+
+  describe("Function: _updateAuctionEnd", () => {
+    it.skip("[unfinished] if min bid made, updates auctionEnd by another auctionLength", async () => {
+      assert(true);
+    });
+
+    it.skip("[unfinished] if min bid not made, updates __  ", async () => {
+      assert(true);
+    });
   });
 });
