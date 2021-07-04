@@ -29,9 +29,7 @@ contract NFTAuction is IERC721Receiver {
     }
 
     // constructor
-    constructor() {
-        console.log("Hello world");
-    }
+    constructor() {}
 
     function _isMinimumBidMade(address _nftContractAddress, uint256 _tokenId)
         internal
@@ -107,8 +105,6 @@ contract NFTAuction is IERC721Receiver {
         //split up revert and update into two methods?
 
         _revertPreviousBidAndUpdateHighestBid(_nftContractAddress, _tokenId);
-
-        console.log(msg.value);
     }
 
     function _updateAuctionEnd(address _nftContractAddress, uint256 _tokenId)

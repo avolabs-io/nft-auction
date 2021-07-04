@@ -1,12 +1,15 @@
 const { expect } = require("chai");
 
+const { BigNumber } = require("ethers");
+// Enable and inject BN dependency
+
 const tokenId = 1;
 const minPrice = 10;
 const auctionLength = 100; //seconds
 
 // Deploy and create a mock erc721 contract.
-// 1 basic test, NFT sent from one person to another works correctly.
-describe("NFTAuction", function () {
+
+describe("NFTAuction Bids", function () {
   let ERC721;
   let erc721;
   let NFTAuction;
@@ -29,17 +32,20 @@ describe("NFTAuction", function () {
     await nftAuction.deployed();
     //approve our smart contract to transfer this NFT
     await erc721.connect(user1).approve(nftAuction.address, 1);
-  });
 
-  it("Deploy mock erc721 and mint erc721 token", async function () {
-    expect(await erc721.ownerOf(1)).to.equal(user1.address);
-  });
-
-  it("Calling newNftAuction transfers NFT to contract", async function () {
     await nftAuction
       .connect(user1)
       .createNewNftAuction(erc721.address, tokenId, minPrice, auctionLength);
-
-    expect(await erc721.ownerOf(1)).to.equal(nftAuction.address);
+  });
+  // 1 basic test, NFT put up for auction can accept bids with ETH
+  it("Calling makeBid to bid on new NFTAuction", async function () {
+    await nftAuction.connect(user2).makeBid(erc721.address, tokenId, {
+      value: minPrice,
+    });
+    let result = await nftAuction.nftContractAuctions(erc721.address, tokenId);
+    expect(result.nftHighestBidder).to.equal(user2.address);
+    expect(result.nftHighestBid.toString()).to.be.equal(
+      BigNumber.from(minPrice).toString()
+    );
   });
 });
