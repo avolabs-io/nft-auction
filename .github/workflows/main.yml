@@ -16,7 +16,7 @@ jobs:
         id: cache
         uses: actions/cache@v2
         with:
-          path: ./contracts/node_modules
+          path: ./node_modules
           key: modules-${{ hashFiles('yarn.lock') }}
       - name: install node packages
         if: steps.cache.outputs.cache-hit != 'true'
