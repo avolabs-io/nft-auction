@@ -1,11 +1,13 @@
 const { expect, assert } = require("chai");
+const { ethers } = require("hardhat");
 
 const { BigNumber } = require("ethers");
 // Enable and inject BN dependency
 
 const tokenId = 1;
-const minPrice = 10;
-const auctionLength = 100; //seconds
+const minPrice = 100;
+const auctionBidPeriod = 86400; //seconds
+const bidIncreasePercentage = 10;
 
 // Deploy and create a mock erc721 contract.
 
@@ -35,7 +37,13 @@ describe("NFTAuction Bids", function () {
 
     await nftAuction
       .connect(user1)
-      .createNewNftAuction(erc721.address, tokenId, minPrice, auctionLength);
+      .createNewNftAuction(
+        erc721.address,
+        tokenId,
+        minPrice,
+        auctionBidPeriod,
+        bidIncreasePercentage
+      );
   });
   // 1 basic test, NFT put up for auction can accept bids with ETH
   it("Calling makeBid to bid on new NFTAuction", async function () {
@@ -51,14 +59,11 @@ describe("NFTAuction Bids", function () {
 
   describe("Function: makeBid", () => {
     it("1st require: Ensure owner cannot bid on own NFT", async () => {
-      await nftAuction.connect(user2).makeBid(erc721.address, tokenId, {
-        value: minPrice,
-      });
-      let result = await nftAuction.nftContractAuctions(
-        erc721.address,
-        tokenId
-      );
-      assert(result.nftSeller != user2.address);
+      await expect(
+        nftAuction.connect(user1).makeBid(erc721.address, tokenId, {
+          value: minPrice,
+        })
+      ).to.be.revertedWith("Owner cannot bid on own NFT");
     });
 
     it("2nd require: Ensure initial bid is higher than minimum bid", async () => {
@@ -77,14 +82,32 @@ describe("NFTAuction Bids", function () {
       );
     });
 
-    it("3rd require: Ensure bid increment >= 10%", async () => {
-      await nftAuction.connect(user2).makeBid(erc721.address, tokenId, {
-        value: (minPrice * 11) / 10,
+    it("3rd require: should not allow bid lower than minimum bid percentage", async function () {
+      nftAuction.connect(user2).makeBid(erc721.address, tokenId, {
+        value: minPrice,
       });
-      let bid = await nftAuction.nftContractAuctions(erc721.address, tokenId);
-      assert(
-        bid.nftHighestBid.toString() >= (BigNumber.from(minPrice) * 11) / 10,
-        "10% or higher bid increment over current highest bid, not met"
+      await expect(
+        nftAuction.connect(user3).makeBid(erc721.address, tokenId, {
+          value: (minPrice * 101) / 100,
+        })
+      ).to.be.revertedWith("Bid must be % more than previous highest bid");
+    });
+
+    it("should allow for new bid if higher than minimum percentage", async function () {
+      await nftAuction.connect(user2).makeBid(erc721.address, tokenId, {
+        value: minPrice,
+      });
+      const bidIncreaseByMinPercentage = (minPrice * 110) / 100;
+      await nftAuction.connect(user3).makeBid(erc721.address, tokenId, {
+        value: bidIncreaseByMinPercentage,
+      });
+      let result = await nftAuction.nftContractAuctions(
+        erc721.address,
+        tokenId
+      );
+      expect(result.nftHighestBidder).to.equal(user3.address);
+      expect(result.nftHighestBid.toString()).to.be.equal(
+        BigNumber.from(bidIncreaseByMinPercentage).toString()
       );
     });
     // test for full functionality of makeBid still needed

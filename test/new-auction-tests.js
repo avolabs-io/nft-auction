@@ -2,7 +2,8 @@ const { expect } = require("chai");
 
 const tokenId = 1;
 const minPrice = 10;
-const auctionLength = 100; //seconds
+const auctionBidPeriod = 86400; //seconds
+const bidIncreasePercentage = 10;
 
 // Deploy and create a mock erc721 contract.
 // 1 basic test, NFT sent from one person to another works correctly.
@@ -38,8 +39,28 @@ describe("NFTAuction", function () {
   it("Calling newNftAuction transfers NFT to contract", async function () {
     await nftAuction
       .connect(user1)
-      .createNewNftAuction(erc721.address, tokenId, minPrice, auctionLength);
+      .createNewNftAuction(
+        erc721.address,
+        tokenId,
+        minPrice,
+        auctionBidPeriod,
+        bidIncreasePercentage
+      );
 
     expect(await erc721.ownerOf(1)).to.equal(nftAuction.address);
+  });
+
+  it("should revert new auction with MinPrice of 0", async function () {
+    await expect(
+      nftAuction
+        .connect(user1)
+        .createNewNftAuction(
+          erc721.address,
+          tokenId,
+          0,
+          auctionBidPeriod,
+          bidIncreasePercentage
+        )
+    ).to.be.revertedWith("Minimum price cannot be 0");
   });
 });
