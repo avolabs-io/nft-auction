@@ -64,11 +64,10 @@ contract NFTAuction is IERC721Receiver {
             nftContractAuctions[_nftContractAddress][_tokenId].auctionEnd);
     }
 
-    function _getBidPercentage(address _nftContractAddress, uint256 _tokenId)
-        internal
-        view
-        returns (uint256)
-    {
+    function _getBidIncreasePercentage(
+        address _nftContractAddress,
+        uint256 _tokenId
+    ) internal view returns (uint256) {
         if (
             nftContractAuctions[_nftContractAddress][_tokenId]
             .bidIncreasePercentage == 0
@@ -165,7 +164,11 @@ contract NFTAuction is IERC721Receiver {
             msg.value >=
                 (nftContractAuctions[_nftContractAddress][_tokenId]
                 .nftHighestBid *
-                    (100 + _getBidPercentage(_nftContractAddress, _tokenId))) /
+                    (100 +
+                        _getBidIncreasePercentage(
+                            _nftContractAddress,
+                            _tokenId
+                        ))) /
                     100,
             "Bid must be % more than previous highest bid"
         );
