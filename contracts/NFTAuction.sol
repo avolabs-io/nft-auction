@@ -13,7 +13,7 @@ contract NFTAuction is IERC721Receiver {
         //map token ID to
         IERC721 _nftContract;
         uint256 minPrice;
-        uint256 AuctionBidPeriod; //Length of time the auction is open in which a new bid can be made
+        uint256 auctionBidPeriod; //Length of time the auction is open in which a new bid can be made
         uint256 auctionEnd;
         uint256 nftHighestBid;
         address nftHighestBidder;
@@ -22,7 +22,7 @@ contract NFTAuction is IERC721Receiver {
     }
     uint256 public defaultBidIncreasePercentage;
     uint256 public defaultAuctionBidPeriod;
-    uint256 public minimumIncreasePercentage;
+    uint256 public minimumSettableIncreasePercentage;
 
     modifier auctionOngoing(address _nftContractAddress, uint256 _tokenId) {
         require(
@@ -32,11 +32,16 @@ contract NFTAuction is IERC721Receiver {
         _;
     }
 
+    modifier auctionMinPriceGreaterThanZero(uint256 _minPrice) {
+        require(_minPrice > 0, "Minimum price cannot be 0");
+        _;
+    }
+
     // constructor
     constructor() {
         defaultBidIncreasePercentage = 10;
         defaultAuctionBidPeriod = 86400; //1 day
-        minimumIncreasePercentage = 5;
+        minimumSettableIncreasePercentage = 5;
     }
 
     function _isMinimumBidMade(address _nftContractAddress, uint256 _tokenId)
@@ -59,31 +64,66 @@ contract NFTAuction is IERC721Receiver {
             nftContractAuctions[_nftContractAddress][_tokenId].auctionEnd);
     }
 
+    function _getBidPercentage(address _nftContractAddress, uint256 _tokenId)
+        internal
+        view
+        returns (uint256)
+    {
+        if (
+            nftContractAuctions[_nftContractAddress][_tokenId]
+            .bidIncreasePercentage == 0
+        ) {
+            return defaultBidIncreasePercentage;
+        } else {
+            return
+                nftContractAuctions[_nftContractAddress][_tokenId]
+                    .bidIncreasePercentage;
+        }
+    }
+
+    function _getAuctionBidPeriod(address _nftContractAddress, uint256 _tokenId)
+        internal
+        view
+        returns (uint256)
+    {
+        if (
+            nftContractAuctions[_nftContractAddress][_tokenId]
+            .auctionBidPeriod == 0
+        ) {
+            return defaultAuctionBidPeriod;
+        } else {
+            return
+                nftContractAuctions[_nftContractAddress][_tokenId]
+                    .auctionBidPeriod;
+        }
+    }
+
     function createDefaultNftAuction(
         address nftContractAddress,
         uint256 tokenId,
         uint256 minPrice
-    ) public {
-        createNewNftAuction(
-            nftContractAddress,
-            tokenId,
-            minPrice,
-            defaultAuctionBidPeriod,
-            defaultBidIncreasePercentage
-        );
+    ) public auctionMinPriceGreaterThanZero(minPrice) {
+        IERC721 nftContract = IERC721(nftContractAddress);
+        //Store the token id, token contract and minimum price
+        nftContractAuctions[nftContractAddress][tokenId]
+        ._nftContract = nftContract;
+        nftContractAuctions[nftContractAddress][tokenId].minPrice = minPrice;
+        nftContractAuctions[nftContractAddress][tokenId].nftSeller = msg.sender;
+
+        //transfer NFT to this smart contract
+        nftContract.safeTransferFrom(msg.sender, address(this), tokenId);
     }
 
     function createNewNftAuction(
         address nftContractAddress,
         uint256 tokenId,
         uint256 minPrice,
-        uint256 AuctionBidPeriod, //this is the time that the auction lasts until another bid occurs
+        uint256 auctionBidPeriod, //this is the time that the auction lasts until another bid occurs
         uint256 bidIncreasePercentage
-    ) public {
+    ) public auctionMinPriceGreaterThanZero(minPrice) {
         // Sending our contract the NFT.
-        require(minPrice > 0, "Minimum price cannot be 0");
         require(
-            bidIncreasePercentage >= minimumIncreasePercentage,
+            bidIncreasePercentage >= minimumSettableIncreasePercentage,
             "Bid increase percentage must be greater than minimum increase percentage"
         );
         IERC721 nftContract = IERC721(nftContractAddress);
@@ -91,9 +131,9 @@ contract NFTAuction is IERC721Receiver {
         nftContractAuctions[nftContractAddress][tokenId]
         ._nftContract = nftContract;
         nftContractAuctions[nftContractAddress][tokenId].minPrice = minPrice;
-        nftContractAuctions[nftContractAddress][tokenId]
-        .AuctionBidPeriod = AuctionBidPeriod;
         nftContractAuctions[nftContractAddress][tokenId].nftSeller = msg.sender;
+        nftContractAuctions[nftContractAddress][tokenId]
+        .auctionBidPeriod = auctionBidPeriod;
         nftContractAuctions[nftContractAddress][tokenId]
         .bidIncreasePercentage = bidIncreasePercentage;
 
@@ -125,13 +165,10 @@ contract NFTAuction is IERC721Receiver {
             msg.value >=
                 (nftContractAuctions[_nftContractAddress][_tokenId]
                 .nftHighestBid *
-                    (100 +
-                        nftContractAuctions[_nftContractAddress][_tokenId]
-                        .bidIncreasePercentage /
-                        100)),
+                    (100 + _getBidPercentage(_nftContractAddress, _tokenId))) /
+                    100,
             "Bid must be % more than previous highest bid"
         );
-
         _updateAuctionEnd(_nftContractAddress, _tokenId);
 
         //split up revert and update into two methods?
@@ -144,13 +181,11 @@ contract NFTAuction is IERC721Receiver {
     {
         if (!_isMinimumBidMade(_nftContractAddress, _tokenId)) {
             nftContractAuctions[_nftContractAddress][_tokenId].auctionEnd =
-                nftContractAuctions[_nftContractAddress][_tokenId]
-                .AuctionBidPeriod +
+                _getAuctionBidPeriod(_nftContractAddress, _tokenId) +
                 block.timestamp;
         } else {
             nftContractAuctions[_nftContractAddress][_tokenId].auctionEnd =
-                nftContractAuctions[_nftContractAddress][_tokenId]
-                .AuctionBidPeriod +
+                _getAuctionBidPeriod(_nftContractAddress, _tokenId) +
                 nftContractAuctions[_nftContractAddress][_tokenId].auctionEnd;
         }
     }
