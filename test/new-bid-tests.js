@@ -1,11 +1,13 @@
 const { expect, assert } = require("chai");
+const { ethers } = require("hardhat");
 
 const { BigNumber } = require("ethers");
 // Enable and inject BN dependency
 
 const tokenId = 1;
 const minPrice = 10;
-const auctionLength = 100; //seconds
+const auctionBidPeriod = 86400; //seconds
+const bidIncreasePercentage = 10;
 
 // Deploy and create a mock erc721 contract.
 
@@ -35,7 +37,13 @@ describe("NFTAuction Bids", function () {
 
     await nftAuction
       .connect(user1)
-      .createNewNftAuction(erc721.address, tokenId, minPrice, auctionLength);
+      .createNewNftAuction(
+        erc721.address,
+        tokenId,
+        minPrice,
+        auctionBidPeriod,
+        bidIncreasePercentage
+      );
   });
   // 1 basic test, NFT put up for auction can accept bids with ETH
   it("Calling makeBid to bid on new NFTAuction", async function () {
@@ -77,15 +85,15 @@ describe("NFTAuction Bids", function () {
       );
     });
 
-    it("3rd require: Ensure bid increment >= 10%", async () => {
-      await nftAuction.connect(user2).makeBid(erc721.address, tokenId, {
-        value: (minPrice * 11) / 10,
+    it("3rd require: should not allow bid lower than minimum bid percentage", async function () {
+      nftAuction.connect(user2).makeBid(erc721.address, tokenId, {
+        value: minPrice,
       });
-      let bid = await nftAuction.nftContractAuctions(erc721.address, tokenId);
-      assert(
-        bid.nftHighestBid.toString() >= (BigNumber.from(minPrice) * 11) / 10,
-        "10% or higher bid increment over current highest bid, not met"
-      );
+      await expect(
+        nftAuction.connect(user3).makeBid(erc721.address, tokenId, {
+          value: (minPrice * 101) / 10,
+        })
+      ).to.be.revertedWith("Bid must be % more than previous highest bid");
     });
     // test for full functionality of makeBid still needed
   });
