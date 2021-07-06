@@ -58,7 +58,7 @@ describe("NFTAuction Bids", function () {
   });
 
   describe("Function: makeBid", () => {
-    it("1st require: Ensure owner cannot bid on own NFT", async () => {
+    it(" should ensure owner cannot bid on own NFT", async () => {
       await expect(
         nftAuction.connect(user1).makeBid(erc721.address, tokenId, {
           value: minPrice,
@@ -66,23 +66,7 @@ describe("NFTAuction Bids", function () {
       ).to.be.revertedWith("Owner cannot bid on own NFT");
     });
 
-    it("2nd require: Ensure initial bid is higher than minimum bid", async () => {
-      // I'm assuming this require is for the initial bid only, because the 3rd require
-      // would ensure all subsequent bids to be bigger than minPrice set by NFT owner
-      await nftAuction.connect(user2).makeBid(erc721.address, tokenId, {
-        value: minPrice + 1,
-      });
-      let result = await nftAuction.nftContractAuctions(
-        erc721.address,
-        tokenId
-      );
-      assert(
-        result.nftHighestBid.toString() > BigNumber.from(minPrice).toString(),
-        "initial bid not higher than minimum bid"
-      );
-    });
-
-    it("3rd require: should not allow bid lower than minimum bid percentage", async function () {
+    it("should not allow bid lower than minimum bid percentage", async function () {
       nftAuction.connect(user2).makeBid(erc721.address, tokenId, {
         value: minPrice,
       });
