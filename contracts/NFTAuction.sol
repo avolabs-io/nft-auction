@@ -233,7 +233,7 @@ contract NFTAuction is IERC721Receiver {
         uint256 _tokenId
     ) internal onlyWhitelistedBuyer(_nftContractAddress, _tokenId) {
         nftContractAuctions[_nftContractAddress][_tokenId].auctionEnd = 1; //end auction
-        _revertPreviousBidAndUpdateHighestBid(_nftContractAddress, _tokenId); //no previous bid made
+        _updateHighestBid(_nftContractAddress, _tokenId); //no previous bid made
         settleAuction(_nftContractAddress, _tokenId);
     }
 
