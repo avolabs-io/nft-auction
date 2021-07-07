@@ -49,6 +49,18 @@ describe("Whitelist sale tests", function () {
     });
     expect(await erc721.ownerOf(tokenId)).to.equal(user2.address);
   });
+  it("should reset variable if sale successful", async function () {
+    await nftAuction.connect(user2).makeBid(erc721.address, tokenId, {
+      value: minPrice,
+    });
+    let result = await nftAuction.nftContractAuctions(erc721.address, tokenId);
+    expect(result.minPrice.toString()).to.be.equal(
+      BigNumber.from(0).toString()
+    );
+    expect(result.nftHighestBid.toString()).to.be.equal(
+      BigNumber.from(0).toString()
+    );
+  });
   // non whitelisted buyer should not be able to purchase NFT
   it("should revert non whitelist buyer", async function () {
     await expect(

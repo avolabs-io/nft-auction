@@ -126,7 +126,7 @@ describe("NFTAuction Bids", function () {
         erc721.address,
         tokenId
       );
-      expect(result.nftRecipient).to.equal(user3.address);
+      expect(result.nftRecipient).to.be.equal(user3.address);
       expect(result.nftHighestBid.toString()).to.be.equal(
         BigNumber.from(minPrice).toString()
       );
@@ -182,7 +182,7 @@ describe("NFTAuction Bids", function () {
       const expectedBalanceAfterPayout = balBefore.add(amount).sub(gasCost);
       //confirm that the user gets their withdrawn bid minus the gas cost
       const userBalance = await user2.getBalance();
-      expect(userBalance.toString()).to.equal(
+      expect(userBalance.toString()).to.be.equal(
         expectedBalanceAfterPayout.toString()
       );
     });
