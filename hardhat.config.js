@@ -21,7 +21,7 @@ task("accounts", "Prints the list of accounts", async () => {
 module.exports = {
   solidity: "0.8.4",
   gasReporter: {
-    enabled: false,
+    enabled: true,
     currency: "USD",
     gasPrice: 30,
     coinmarketcap: "9aacee3e-7c04-4978-8f93-63198c0fbfef",
