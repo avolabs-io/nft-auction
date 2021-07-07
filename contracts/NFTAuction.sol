@@ -25,6 +25,37 @@ contract NFTAuction is IERC721Receiver {
     uint256 public defaultAuctionBidPeriod;
     uint256 public minimumSettableIncreasePercentage;
 
+    /*╔═════════════════════════════╗
+      ║           EVENTS            ║
+      ╚═════════════════════════════╝*/
+
+    event DefaultNftAuctionCreated(
+        address nftContractAddress,
+        uint256 tokenId,
+        uint256 minPrice
+    );
+
+    event NftAuctionCreated(
+        address nftContractAddress,
+        uint256 tokenId,
+        uint256 minPrice,
+        uint256 auctionBidPeriod,
+        uint256 bidIncreasePercentage
+    );
+
+    event WhiteListSaleCreated(
+        address nftContractAddress,
+        uint256 tokenId,
+        uint256 minPrice,
+        address whiteListedBuyer
+    );
+
+    event AuctionSettled(address nftContractAddress, uint256 tokenId);
+
+    /*╔═════════════════════════════╗
+      ║          MODIFIERS          ║
+      ╚═════════════════════════════╝*/
+
     modifier auctionOngoing(address _nftContractAddress, uint256 _tokenId) {
         require(
             _isAuctionOngoing(_nftContractAddress, _tokenId),
@@ -55,6 +86,7 @@ contract NFTAuction is IERC721Receiver {
         );
         _;
     }
+
     modifier bidPriceMeetsBidRequirements(
         address _nftContractAddress,
         uint256 _tokenId
@@ -100,6 +132,10 @@ contract NFTAuction is IERC721Receiver {
         defaultAuctionBidPeriod = 86400; //1 day
         minimumSettableIncreasePercentage = 5;
     }
+
+    /*╔══════════════════════════════╗
+      ║       GETTER FUNCTIONS       ║
+      ╚══════════════════════════════╝*/
 
     function _isMinimumBidMade(address _nftContractAddress, uint256 _tokenId)
         internal
@@ -156,6 +192,10 @@ contract NFTAuction is IERC721Receiver {
         }
     }
 
+    /*╔══════════════════════════════╗
+      ║       AUCTION CREATION       ║
+      ╚══════════════════════════════╝*/
+
     function _createNewNftAuction(
         address _nftContractAddress,
         uint256 _tokenId,
@@ -182,6 +222,8 @@ contract NFTAuction is IERC721Receiver {
         uint256 _minPrice
     ) external {
         _createNewNftAuction(_nftContractAddress, _tokenId, _minPrice);
+
+        emit DefaultNftAuctionCreated(_nftContractAddress, _tokenId, _minPrice);
     }
 
     function createNewNftAuction(
@@ -201,6 +243,14 @@ contract NFTAuction is IERC721Receiver {
         .auctionBidPeriod = _auctionBidPeriod;
         nftContractAuctions[_nftContractAddress][_tokenId]
         .bidIncreasePercentage = _bidIncreasePercentage;
+
+        emit NftAuctionCreated(
+            _nftContractAddress,
+            _tokenId,
+            _minPrice,
+            _auctionBidPeriod,
+            _bidIncreasePercentage
+        );
     }
 
     function createWhiteListSale(
@@ -212,9 +262,18 @@ contract NFTAuction is IERC721Receiver {
         _createNewNftAuction(_nftContractAddress, _tokenId, _minPrice);
         nftContractAuctions[_nftContractAddress][_tokenId]
         .whiteListedBuyer = _whiteListedBuyer;
+
+        emit WhiteListSaleCreated(
+            _nftContractAddress,
+            _tokenId,
+            _minPrice,
+            _whiteListedBuyer
+        );
     }
 
-    // bid functions.
+    /*╔═════════════════════════════╗
+      ║        BID FUNCTIONS        ║
+      ╚═════════════════════════════╝*/
     //Add the functionality that holds the auction until first bid.
     // the auction time should then kick off
     //each new bid should add time to the auction length
@@ -359,6 +418,8 @@ contract NFTAuction is IERC721Receiver {
             //Send NFT to bidder and payout to seller
             _transferNftAndPaySeller(_nftContractAddress, _tokenId);
         }
+
+        emit AuctionSettled(_nftContractAddress, _tokenId);
     }
 
     function withdrawNft(address _nftContractAddress, uint256 _tokenId)
