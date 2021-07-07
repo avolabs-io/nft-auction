@@ -55,4 +55,20 @@ describe("Early bid tests", function () {
     let result = await nftAuction.nftContractAuctions(erc721.address, tokenId);
     expect(result.minPrice).to.equal(BigNumber.from(minPrice).toString());
   });
+  it("should start auction period if early bid is higher than minimum", async function () {
+    await nftAuction
+      .connect(user1)
+      .createDefaultNftAuction(erc721.address, tokenId, minPrice);
+
+    let result = await nftAuction.nftContractAuctions(erc721.address, tokenId);
+    expect(result.auctionEnd).to.be.not.equal(BigNumber.from(0).toString());
+  });
+  it("should not start auction period if early bid less than minimum", async function () {
+    await nftAuction
+      .connect(user1)
+      .createDefaultNftAuction(erc721.address, tokenId, minPrice - 1);
+
+    let result = await nftAuction.nftContractAuctions(erc721.address, tokenId);
+    expect(result.auctionEnd).to.be.not.equal(BigNumber.from(0).toString());
+  });
 });
