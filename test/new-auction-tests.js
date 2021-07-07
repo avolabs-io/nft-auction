@@ -49,7 +49,7 @@ describe("NFTAuction", function () {
         bidIncreasePercentage
       );
 
-    expect(await erc721.ownerOf(1)).to.equal(nftAuction.address);
+    expect(await erc721.ownerOf(tokenId)).to.equal(nftAuction.address);
   });
 
   it("should not allow minimum bid increase percentage below minimum settable value", async function () {
@@ -87,7 +87,7 @@ describe("NFTAuction", function () {
       .connect(user1)
       .createDefaultNftAuction(erc721.address, tokenId, minPrice);
 
-    expect(await erc721.ownerOf(1)).to.equal(nftAuction.address);
+    expect(await erc721.ownerOf(tokenId)).to.equal(nftAuction.address);
   });
 
   describe("Test when no bids made on new auction", function () {
@@ -97,9 +97,9 @@ describe("NFTAuction", function () {
         .createDefaultNftAuction(erc721.address, tokenId, minPrice);
     });
     it("should allow seller to withdraw NFT if no bids made", async function () {
-      expect(await erc721.ownerOf(1)).to.equal(nftAuction.address);
+      expect(await erc721.ownerOf(tokenId)).to.equal(nftAuction.address);
       await nftAuction.connect(user1).withdrawNft(erc721.address, tokenId);
-      expect(await erc721.ownerOf(1)).to.equal(user1.address);
+      expect(await erc721.ownerOf(tokenId)).to.equal(user1.address);
     });
     it("should reset auction when NFT withdrawn", async function () {
       await nftAuction.connect(user1).withdrawNft(erc721.address, tokenId);
