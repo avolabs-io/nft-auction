@@ -66,16 +66,4 @@ describe("Whitelist sale tests", function () {
       })
     ).to.be.revertedWith("Bid must be higher than minimum bid");
   });
-  // test auction is over works correctly
-  //Auction is over now and NFT not for sale, but user2 can make a bid
-  it.skip("should not allow whitelist buyer to bid on closed sale", async function () {
-    await nftAuction.connect(user2).makeBid(erc721.address, tokenId, {
-      value: minPrice,
-    });
-    await expect(
-      nftAuction.connect(user2).makeBid(erc721.address, tokenId, {
-        value: minPrice,
-      })
-    ).to.be.revertedWith("Auction has ended");
-  });
 });

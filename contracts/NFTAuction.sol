@@ -193,7 +193,7 @@ contract NFTAuction is IERC721Receiver {
     ) external {
         require(
             _bidIncreasePercentage >= minimumSettableIncreasePercentage,
-            "Bid increase percentage must be greater than minimum increase percentage"
+            "Bid increase percentage must be greater than minimum settable increase percentage"
         );
         _createNewNftAuction(_nftContractAddress, _tokenId, _minPrice);
 
@@ -250,17 +250,10 @@ contract NFTAuction is IERC721Receiver {
     function _updateAuctionEnd(address _nftContractAddress, uint256 _tokenId)
         internal
     {
-        if (
-            nftContractAuctions[_nftContractAddress][_tokenId].auctionEnd == 0
-        ) {
-            nftContractAuctions[_nftContractAddress][_tokenId].auctionEnd =
-                _getAuctionBidPeriod(_nftContractAddress, _tokenId) +
-                block.timestamp;
-        } else {
-            nftContractAuctions[_nftContractAddress][_tokenId].auctionEnd =
-                _getAuctionBidPeriod(_nftContractAddress, _tokenId) +
-                nftContractAuctions[_nftContractAddress][_tokenId].auctionEnd;
-        }
+        //the auction end is always set to now + the period
+        nftContractAuctions[_nftContractAddress][_tokenId].auctionEnd =
+            _getAuctionBidPeriod(_nftContractAddress, _tokenId) +
+            block.timestamp;
     }
 
     function _resetAuction(address _nftContractAddress, uint256 _tokenId)
