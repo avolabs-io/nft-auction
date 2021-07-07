@@ -126,7 +126,7 @@ describe("End to end auction tests", function () {
     auctionBidPeriod = 106400;
     beforeEach(async function () {
       await nftAuction.connect(user2).makeBid(erc721.address, tokenId, {
-        value: minPrice,
+        value: minPrice - 1,
       });
     });
     it("should allow owner to create auction which concludes after multiple bids", async function () {
@@ -145,6 +145,7 @@ describe("End to end auction tests", function () {
           value: minPrice,
         })
       ).to.be.revertedWith("Bid must be % more than previous highest bid");
+
       const bidIncreaseByMinPercentage =
         (minPrice * (100 + bidIncreasePercentage)) / 100;
       await network.provider.send("evm_increaseTime", [43200]);

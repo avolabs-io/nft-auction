@@ -160,6 +160,15 @@ contract NFTAuction is IERC721Receiver {
             nftContractAuctions[_nftContractAddress][_tokenId].auctionEnd);
     }
 
+    function _isWhitelistedSale(address _nftContractAddress, uint256 _tokenId)
+        internal
+        view
+        returns (bool)
+    {
+        return (nftContractAuctions[_nftContractAddress][_tokenId]
+        .whiteListedBuyer != address(0));
+    }
+
     function _getBidIncreasePercentage(
         address _nftContractAddress,
         uint256 _tokenId
@@ -310,10 +319,7 @@ contract NFTAuction is IERC721Receiver {
         public
         payable
     {
-        if (
-            nftContractAuctions[_nftContractAddress][_tokenId]
-            .whiteListedBuyer != address(0)
-        ) {
+        if (_isWhitelistedSale(_nftContractAddress, _tokenId)) {
             _concludeWhitelistSale(_nftContractAddress, _tokenId);
         } else {
             _makeBid(_nftContractAddress, _tokenId);
@@ -325,10 +331,7 @@ contract NFTAuction is IERC721Receiver {
         uint256 _tokenId,
         address _nftRecipient
     ) external payable {
-        if (
-            nftContractAuctions[_nftContractAddress][_tokenId]
-            .whiteListedBuyer != address(0)
-        ) {
+        if (_isWhitelistedSale(_nftContractAddress, _tokenId)) {
             _concludeCustomWhitelistSale(
                 _nftContractAddress,
                 _tokenId,

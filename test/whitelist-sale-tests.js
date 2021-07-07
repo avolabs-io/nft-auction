@@ -61,6 +61,14 @@ describe("Whitelist sale tests", function () {
       BigNumber.from(0).toString()
     );
   });
+  it("should allow whitelist buyer to purchase NFT and add recipient", async function () {
+    await nftAuction
+      .connect(user2)
+      .makeCustomBid(erc721.address, tokenId, user3.address, {
+        value: minPrice,
+      });
+    expect(await erc721.ownerOf(tokenId)).to.equal(user3.address);
+  });
   // non whitelisted buyer should not be able to purchase NFT
   it("should revert non whitelist buyer", async function () {
     await expect(
