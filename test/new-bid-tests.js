@@ -115,6 +115,22 @@ describe("NFTAuction Bids", function () {
         nftAuction.connect(user2).withdrawBid(erc721.address, tokenId)
       ).to.be.revertedWith("The auction has a valid bid made");
     });
+
+    it("should allow bidder to specify NFT recipient", async function () {
+      await nftAuction
+        .connect(user2)
+        .makeCustomBid(erc721.address, tokenId, user3.address, {
+          value: minPrice,
+        });
+      let result = await nftAuction.nftContractAuctions(
+        erc721.address,
+        tokenId
+      );
+      expect(result.nftRecipient).to.equal(user3.address);
+      expect(result.nftHighestBid.toString()).to.be.equal(
+        BigNumber.from(minPrice).toString()
+      );
+    });
     // test for full functionality of makeBid still needed
   });
   describe("Test underbid functionality", function () {
@@ -140,7 +156,7 @@ describe("NFTAuction Bids", function () {
     it("should not set a minimum price", async function () {
       expect(result.minPrice).to.be.equal(BigNumber.from(0).toString());
     });
-    it("should allow bidder to withdraw funds", async function () {
+    it("should reset bids when bidder withdraws funds", async function () {
       await nftAuction.connect(user2).withdrawBid(erc721.address, tokenId);
       result = await nftAuction.nftContractAuctions(erc721.address, tokenId);
       expect(result.nftHighestBidder).to.be.equal(
