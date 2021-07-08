@@ -5,6 +5,7 @@ const { network } = require("hardhat");
 
 const tokenId = 1;
 const minPrice = 10000;
+const newPrice = 15000;
 
 // Deploy and create a mock erc721 contract.
 // Test end to end auction
@@ -99,6 +100,12 @@ describe("End to end auction tests", function () {
       await nftAuction.connect(user3).makeBid(erc721.address, tokenId, {
         value: bidIncreaseByMinPercentage,
       });
+      await expect(
+        nftAuction
+          .connect(user1)
+          .updateMinimumPrice(erc721.address, tokenId, newPrice)
+      ).to.be.revertedWith("The auction has a valid bid made");
+
       await network.provider.send("evm_increaseTime", [86000]);
       const bidIncreaseByMinPercentage2 =
         (bidIncreaseByMinPercentage * (100 + bidIncreasePercentage)) / 100;
