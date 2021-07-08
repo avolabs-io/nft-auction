@@ -535,6 +535,22 @@ contract NFTAuction is IERC721Receiver {
         .whiteListedBuyer = _newWhiteListedBuyer;
     }
 
+    function updateMinimumPrice(
+        address _nftContractAddress,
+        uint256 _tokenId,
+        uint256 _newMinPrice
+    )
+        external
+        onlyNftSeller(_nftContractAddress, _tokenId)
+        minimumBidNotMade(_nftContractAddress, _tokenId)
+    {
+        nftContractAuctions[_nftContractAddress][_tokenId]
+        .minPrice = _newMinPrice;
+        if (_isMinimumBidMade(_nftContractAddress, _tokenId)) {
+            _updateAuctionEnd(_nftContractAddress, _tokenId);
+        }
+    }
+
     //ERC721Receiver function to ensure usage of ERC721 function safeTransferFrom
     function onERC721Received(
         address,

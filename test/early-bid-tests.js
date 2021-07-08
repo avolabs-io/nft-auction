@@ -6,6 +6,7 @@ const { BigNumber } = require("ethers");
 
 const tokenId = 1;
 const minPrice = 100;
+const newMinPrice = 50;
 const auctionBidPeriod = 86400; //seconds
 const bidIncreasePercentage = 10;
 
@@ -70,5 +71,12 @@ describe("Early bid tests", function () {
 
     let result = await nftAuction.nftContractAuctions(erc721.address, tokenId);
     expect(result.auctionEnd).to.be.not.equal(BigNumber.from(0).toString());
+  });
+  it("should not allow minPrice to be updated unless auction started", async function () {
+    await expect(
+      nftAuction
+        .connect(user2)
+        .updateMinimumPrice(erc721.address, tokenId, newMinPrice)
+    ).to.be.revertedWith("Only the owner can call this function");
   });
 });

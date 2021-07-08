@@ -3,7 +3,8 @@ const { expect } = require("chai");
 const { BigNumber } = require("ethers");
 
 const tokenId = 1;
-const minPrice = 10;
+const minPrice = 100;
+const newMinPrice = 50;
 const auctionBidPeriod = 86400; //seconds
 const bidIncreasePercentage = 10;
 
@@ -122,6 +123,25 @@ describe("NFTAuction", function () {
           .connect(user1)
           .updateWhitelistedBuyer(erc721.address, tokenId, user3.address)
       ).to.be.revertedWith("Not a whitelisted sale");
+    });
+    it("should allow seller to update minimum price", async function () {
+      await nftAuction
+        .connect(user1)
+        .updateMinimumPrice(erc721.address, tokenId, newMinPrice);
+      let result = await nftAuction.nftContractAuctions(
+        erc721.address,
+        tokenId
+      );
+      expect(result.minPrice.toString()).to.be.equal(
+        BigNumber.from(newMinPrice).toString()
+      );
+    });
+    it("should not allow other user to update min price", async function () {
+      await expect(
+        nftAuction
+          .connect(user2)
+          .updateMinimumPrice(erc721.address, tokenId, newMinPrice)
+      ).to.be.revertedWith("Only the owner can call this function");
     });
   });
 });

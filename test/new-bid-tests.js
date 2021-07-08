@@ -6,6 +6,7 @@ const { BigNumber } = require("ethers");
 
 const tokenId = 1;
 const minPrice = 100;
+const newMinPrice = 50;
 const auctionBidPeriod = 86400; //seconds
 const bidIncreasePercentage = 10;
 
@@ -199,6 +200,34 @@ describe("NFTAuction Bids", function () {
       await expect(
         nftAuction.connect(user3).withdrawBid(erc721.address, tokenId)
       ).to.be.revertedWith("Cannot withdraw funds");
+    });
+    it("should allow seller to lower minimum price and start the auction", async function () {
+      await nftAuction
+        .connect(user1)
+        .updateMinimumPrice(erc721.address, tokenId, newMinPrice);
+      let result = await nftAuction.nftContractAuctions(
+        erc721.address,
+        tokenId
+      );
+      expect(result.auctionEnd.toString()).to.be.not.equal(
+        BigNumber.from(0).toString()
+      );
+    });
+    it("should allow seller to update price above current bid and not start the auction", async function () {
+      await nftAuction
+        .connect(user1)
+        .updateMinimumPrice(erc721.address, tokenId, underBid + 5);
+      let result = await nftAuction.nftContractAuctions(
+        erc721.address,
+        tokenId
+      );
+
+      expect(result.auctionEnd.toString()).to.be.equal(
+        BigNumber.from(0).toString()
+      );
+      expect(result.nftHighestBid.toString()).to.be.equal(
+        BigNumber.from(underBid).toString()
+      );
     });
   });
   describe("Function: _updateAuctionEnd", () => {
