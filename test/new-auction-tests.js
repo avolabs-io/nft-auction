@@ -114,7 +114,14 @@ describe("NFTAuction", function () {
     it("should not allow other users to withdraw NFT", async function () {
       await expect(
         nftAuction.connect(user2).withdrawNft(erc721.address, tokenId)
-      ).to.be.revertedWith("Only the owner can withdraw their NFT");
+      ).to.be.revertedWith("Only the owner can call this function");
+    });
+    it("should revert when trying to update whitelisted buyer", async function () {
+      await expect(
+        nftAuction
+          .connect(user1)
+          .updateWhitelistedBuyer(erc721.address, tokenId, user3.address)
+      ).to.be.revertedWith("Not a whitelisted sale");
     });
   });
 });

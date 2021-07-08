@@ -62,7 +62,7 @@ describe("NFTAuction Bids", function () {
         BigNumber.from(minPrice).toString()
       );
     });
-    it(" should ensure owner cannot bid on own NFT", async function () {
+    it("should ensure owner cannot bid on own NFT", async function () {
       await expect(
         nftAuction.connect(user1).makeBid(erc721.address, tokenId, {
           value: minPrice,
@@ -134,10 +134,19 @@ describe("NFTAuction Bids", function () {
     // test for full functionality of makeBid still needed
   });
   describe("Test underbid functionality", function () {
-    let underBid = minPrice - 1;
+    let underBid = minPrice - 10;
     let result;
     let user1BalanceBeforePayout;
     beforeEach(async function () {
+      await nftAuction
+        .connect(user1)
+        .createNewNftAuction(
+          erc721.address,
+          tokenId,
+          minPrice,
+          auctionBidPeriod,
+          bidIncreasePercentage
+        );
       await nftAuction.connect(user2).makeBid(erc721.address, tokenId, {
         value: underBid,
       });
@@ -153,8 +162,8 @@ describe("NFTAuction Bids", function () {
     it("should not commence the auction", async function () {
       expect(result.auctionEnd).to.be.equal(BigNumber.from(0).toString());
     });
-    it("should not set a minimum price", async function () {
-      expect(result.minPrice).to.be.equal(BigNumber.from(0).toString());
+    it("should set a minimum price", async function () {
+      expect(result.minPrice).to.be.equal(BigNumber.from(minPrice).toString());
     });
     it("should reset bids when bidder withdraws funds", async function () {
       await nftAuction.connect(user2).withdrawBid(erc721.address, tokenId);

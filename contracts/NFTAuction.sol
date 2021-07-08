@@ -78,6 +78,14 @@ contract NFTAuction is IERC721Receiver {
         );
         _;
     }
+    modifier onlyNftSeller(address _nftContractAddress, uint256 _tokenId) {
+        require(
+            msg.sender ==
+                nftContractAuctions[_nftContractAddress][_tokenId].nftSeller,
+            "Only the owner can call this function"
+        );
+        _;
+    }
 
     modifier bidExceedsMinPrice(address _nftContractAddress, uint256 _tokenId) {
         require(
@@ -244,15 +252,6 @@ contract NFTAuction is IERC721Receiver {
         }
     }
 
-    function _makeBid(address _nftContractAddress, uint256 _tokenId)
-        internal
-        auctionOngoing(_nftContractAddress, _tokenId)
-        notNftSeller(_nftContractAddress, _tokenId)
-        bidPriceMeetsBidRequirements(_nftContractAddress, _tokenId)
-    {
-        _updateOngoingAuction(_nftContractAddress, _tokenId);
-    }
-
     function createDefaultNftAuction(
         address _nftContractAddress,
         uint256 _tokenId,
@@ -311,6 +310,16 @@ contract NFTAuction is IERC721Receiver {
     /*╔═════════════════════════════╗
       ║        BID FUNCTIONS        ║
       ╚═════════════════════════════╝*/
+
+    function _makeBid(address _nftContractAddress, uint256 _tokenId)
+        internal
+        auctionOngoing(_nftContractAddress, _tokenId)
+        notNftSeller(_nftContractAddress, _tokenId)
+        bidPriceMeetsBidRequirements(_nftContractAddress, _tokenId)
+    {
+        _updateOngoingAuction(_nftContractAddress, _tokenId);
+    }
+
     //Add the functionality that holds the auction until first bid.
     // the auction time should then kick off
     //each new bid should add time to the auction length
@@ -350,7 +359,7 @@ contract NFTAuction is IERC721Receiver {
     ) internal {
         _reversePreviousBidAndUpdateHighestBid(_nftContractAddress, _tokenId);
         //min price not set, nft not up for auction yet
-        if (nftContractAuctions[_nftContractAddress][_tokenId].minPrice != 0) {
+        if (_isMinimumBidMade(_nftContractAddress, _tokenId)) {
             _updateAuctionEnd(_nftContractAddress, _tokenId);
         }
     }
@@ -479,10 +488,6 @@ contract NFTAuction is IERC721Receiver {
             !_isAuctionOngoing(_nftContractAddress, _tokenId),
             "Auction is not yet over"
         );
-        require(
-            _isMinimumBidMade(_nftContractAddress, _tokenId),
-            "Cannot settle auction: minimum price not met"
-        );
         _transferNftAndPaySeller(_nftContractAddress, _tokenId);
         emit AuctionSettled(_nftContractAddress, _tokenId);
     }
@@ -490,13 +495,8 @@ contract NFTAuction is IERC721Receiver {
     function withdrawNft(address _nftContractAddress, uint256 _tokenId)
         external
         minimumBidNotMade(_nftContractAddress, _tokenId)
+        onlyNftSeller(_nftContractAddress, _tokenId)
     {
-        require(
-            msg.sender ==
-                nftContractAuctions[_nftContractAddress][_tokenId].nftSeller,
-            "Only the owner can withdraw their NFT"
-        );
-
         nftContractAuctions[_nftContractAddress][_tokenId]
             ._nftContract
             .safeTransferFrom(
@@ -520,6 +520,19 @@ contract NFTAuction is IERC721Receiver {
 
         _reversePreviousBid(_nftContractAddress, _tokenId);
         _resetBids(_nftContractAddress, _tokenId);
+    }
+
+    function updateWhitelistedBuyer(
+        address _nftContractAddress,
+        uint256 _tokenId,
+        address _newWhiteListedBuyer
+    ) external onlyNftSeller(_nftContractAddress, _tokenId) {
+        require(
+            _isWhitelistedSale(_nftContractAddress, _tokenId),
+            "Not a whitelisted sale"
+        );
+        nftContractAuctions[_nftContractAddress][_tokenId]
+        .whiteListedBuyer = _newWhiteListedBuyer;
     }
 
     //ERC721Receiver function to ensure usage of ERC721 function safeTransferFrom

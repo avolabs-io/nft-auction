@@ -86,4 +86,25 @@ describe("Whitelist sale tests", function () {
       })
     ).to.be.revertedWith("Bid must be higher than minimum bid");
   });
+  it("should allow seller to update whitelisted buyer", async function () {
+    await nftAuction
+      .connect(user1)
+      .updateWhitelistedBuyer(erc721.address, tokenId, user3.address);
+    await expect(
+      nftAuction.connect(user2).makeBid(erc721.address, tokenId, {
+        value: minPrice,
+      })
+    ).to.be.revertedWith("only the whitelisted buyer can bid on this NFT");
+    await nftAuction.connect(user3).makeBid(erc721.address, tokenId, {
+      value: minPrice,
+    });
+    expect(await erc721.ownerOf(tokenId)).to.equal(user3.address);
+  });
+  it("should not allow other users to update whitelisted buyer", async function () {
+    await expect(
+      nftAuction
+        .connect(user2)
+        .updateWhitelistedBuyer(erc721.address, tokenId, user3.address)
+    ).to.be.revertedWith("Only the owner can call this function");
+  });
 });

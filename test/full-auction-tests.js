@@ -117,6 +117,16 @@ describe("End to end auction tests", function () {
       ).to.be.revertedWith("Auction is not yet over");
       await network.provider.send("evm_increaseTime", [auctionBidPeriod + 1]);
       //auction has ended
+
+      const bidIncreaseByMinPercentage4 =
+        (bidIncreaseByMinPercentage3 * (100 + bidIncreasePercentage)) / 100;
+      await expect(
+        nftAuction
+          .connect(user2)
+          .makeCustomBid(erc721.address, tokenId, user4.address, {
+            value: bidIncreaseByMinPercentage4,
+          })
+      ).to.be.revertedWith("Auction has ended");
       await nftAuction.connect(user3).settleAuction(erc721.address, tokenId);
       expect(await erc721.ownerOf(tokenId)).to.equal(user3.address);
     });
