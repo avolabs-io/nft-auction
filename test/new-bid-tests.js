@@ -230,13 +230,4 @@ describe("NFTAuction Bids", function () {
       );
     });
   });
-  describe("Function: _updateAuctionEnd", () => {
-    it.skip("[unfinished] if min bid made, updates auctionEnd by another auctionLength", async () => {
-      assert(true);
-    });
-
-    it.skip("[unfinished] if min bid not made, updates __  ", async () => {
-      assert(true);
-    });
-  });
 });
