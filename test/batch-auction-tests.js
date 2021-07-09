@@ -7,7 +7,7 @@ const tokenIdMaster = 1;
 const layers = [2, 3, 4, 5, 6, 7, 8, 9, 10];
 const minPrice = 10000;
 const newPrice = 15000;
-const auctionBidPeriod = 86400; //seconds
+const auctionBidPeriod = 106400; //seconds
 
 // Deploy and create a mock erc721 contract.
 // Test end to end auction
@@ -39,14 +39,17 @@ describe("Batch Auction", function () {
     await nftAuction.deployed();
     //approve our smart contract to transfer this NFT
     await erc721.connect(user1).approve(nftAuction.address, tokenIdMaster);
-    for (let i = 0; i < layers.length; i++) {
-      await erc721.connect(user1).approve(nftAuction.address, layers[i]);
-    }
+    await erc721.connect(user1).setApprovalForAll(nftAuction.address, true);
   });
   it("should allow batch auctions", async function () {
     await nftAuction
       .connect(user1)
-      .createBatchNftAuction(erc721.address, tokenIdMaster, minPrice, layers);
+      .createDefaultBatchNftAuction(
+        erc721.address,
+        tokenIdMaster,
+        minPrice,
+        layers
+      );
     expect(await erc721.ownerOf(tokenIdMaster)).to.equal(nftAuction.address);
     for (let i = 0; i < layers.length; i++) {
       expect(await erc721.ownerOf(layers[i])).to.equal(nftAuction.address);
@@ -56,14 +59,19 @@ describe("Batch Auction", function () {
     await expect(
       nftAuction
         .connect(user1)
-        .createBatchNftAuction(erc721.address, tokenIdMaster, 0, layers)
+        .createDefaultBatchNftAuction(erc721.address, tokenIdMaster, 0, layers)
     ).to.be.revertedWith("Minimum price cannot be 0");
   });
-  describe("Batch Auction Bids and settlement tests", async function () {
+  describe(" Default Batch Auction Bids and settlement tests", async function () {
     beforeEach(async function () {
       await nftAuction
         .connect(user1)
-        .createBatchNftAuction(erc721.address, tokenIdMaster, minPrice, layers);
+        .createDefaultBatchNftAuction(
+          erc721.address,
+          tokenIdMaster,
+          minPrice,
+          layers
+        );
     });
     it("should allow seller to withdraw NFTs if no bids made", async function () {
       await nftAuction
@@ -121,6 +129,80 @@ describe("Batch Auction", function () {
       }
     });
   });
+  /*
+   ****Test custom batch auctions****
+   */
+  describe(" Custom Batch Auction Bids and settlement tests", async function () {
+    beforeEach(async function () {
+      bidIncreasePercentage = 15;
+      await nftAuction
+        .connect(user1)
+        .createBatchNftAuction(
+          erc721.address,
+          tokenIdMaster,
+          minPrice,
+          layers,
+          auctionBidPeriod,
+          bidIncreasePercentage
+        );
+    });
+    it("should allow seller to withdraw NFTs if no bids made", async function () {
+      await nftAuction
+        .connect(user1)
+        .withdrawNft(erc721.address, tokenIdMaster);
+      expect(await erc721.ownerOf(tokenIdMaster)).to.equal(user1.address);
+      for (let i = 0; i < layers.length; i++) {
+        expect(await erc721.ownerOf(layers[i])).to.equal(user1.address);
+      }
+    });
+    it("should reset auction when NFT withdrawn", async function () {
+      await nftAuction
+        .connect(user1)
+        .withdrawNft(erc721.address, tokenIdMaster);
+      let result = await nftAuction.nftContractAuctions(
+        erc721.address,
+        tokenIdMaster
+      );
+      expect(result.minPrice.toString()).to.be.equal(
+        BigNumber.from(0).toString()
+      );
+    });
+    it("should allow bids on batch auction", async function () {
+      await nftAuction.connect(user2).makeBid(erc721.address, tokenIdMaster, {
+        value: minPrice,
+      });
+      let result = await nftAuction.nftContractAuctions(
+        erc721.address,
+        tokenIdMaster
+      );
+      expect(result.nftHighestBidder).to.equal(user2.address);
+      expect(result.nftHighestBid.toString()).to.be.equal(
+        BigNumber.from(minPrice).toString()
+      );
+    });
+    it("should transfer nfts to buyer when auction is over", async function () {
+      await nftAuction.connect(user2).makeBid(erc721.address, tokenIdMaster, {
+        value: minPrice,
+      });
+      let result = await nftAuction.nftContractAuctions(
+        erc721.address,
+        tokenIdMaster
+      );
+      expect(result.auctionEnd.toString()).to.be.not.equal(
+        BigNumber.from(0).toString()
+      );
+      await network.provider.send("evm_increaseTime", [auctionBidPeriod + 1]);
+      //auction has ended
+      await nftAuction
+        .connect(user2)
+        .settleAuction(erc721.address, tokenIdMaster);
+      expect(await erc721.ownerOf(tokenIdMaster)).to.equal(user2.address);
+      for (let i = 0; i < layers.length; i++) {
+        expect(await erc721.ownerOf(layers[i])).to.equal(user2.address);
+      }
+    });
+  });
+
   describe("Test early bids with batch auctions", async function () {
     this.beforeEach(async function () {
       await nftAuction.connect(user2).makeBid(erc721.address, tokenIdMaster, {
@@ -130,7 +212,12 @@ describe("Batch Auction", function () {
     it(" should create auction and transfer NFTs to contract", async function () {
       await nftAuction
         .connect(user1)
-        .createBatchNftAuction(erc721.address, tokenIdMaster, minPrice, layers);
+        .createDefaultBatchNftAuction(
+          erc721.address,
+          tokenIdMaster,
+          minPrice,
+          layers
+        );
       expect(await erc721.ownerOf(tokenIdMaster)).to.equal(nftAuction.address);
       for (let i = 0; i < layers.length; i++) {
         expect(await erc721.ownerOf(layers[i])).to.equal(nftAuction.address);
@@ -139,7 +226,12 @@ describe("Batch Auction", function () {
     it("should start the auction as min price is met", async function () {
       await nftAuction
         .connect(user1)
-        .createBatchNftAuction(erc721.address, tokenIdMaster, minPrice, layers);
+        .createDefaultBatchNftAuction(
+          erc721.address,
+          tokenIdMaster,
+          minPrice,
+          layers
+        );
       let result = await nftAuction.nftContractAuctions(
         erc721.address,
         tokenIdMaster
