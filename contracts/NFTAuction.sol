@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-contract NFTAuction is IERC721Receiver {
+contract NFTAuction {
     using SafeERC20 for IERC20;
     mapping(address => mapping(uint256 => Auction)) public nftContractAuctions;
 
@@ -161,6 +161,11 @@ contract NFTAuction is IERC721Receiver {
         _;
     }
 
+    modifier notZeroAddress(address _address) {
+        require(_address != address(0), "cannot specify 0 address");
+        _;
+    }
+
     // constructor
     constructor() {
         defaultBidIncreasePercentage = 10;
@@ -309,7 +314,7 @@ contract NFTAuction is IERC721Receiver {
         uint256 _tokenId
     ) internal {
         IERC721 nftContract = IERC721(_nftContractAddress);
-        nftContract.safeTransferFrom(msg.sender, address(this), _tokenId);
+        nftContract.transferFrom(msg.sender, address(this), _tokenId);
 
         //Store the token id, token contract and minimum price
         nftContractAuctions[_nftContractAddress][_tokenId]
@@ -326,7 +331,7 @@ contract NFTAuction is IERC721Receiver {
         for (i = 0; i < _layers.length; i++) {
             nftContractAuctions[_nftContractAddress][_tokenIdMaster]
                 ._nftContract
-                .safeTransferFrom(msg.sender, address(this), _layers[i]);
+                .transferFrom(msg.sender, address(this), _layers[i]);
         }
         nftContractAuctions[_nftContractAddress][_tokenIdMaster]
         .layers = _layers;
@@ -614,6 +619,7 @@ contract NFTAuction is IERC721Receiver {
     )
         external
         payable
+        notZeroAddress(_nftRecipient)
         paymentAccepted(_nftContractAddress, _tokenId, _erc20Token)
     {
         if (_isWhitelistedSale(_nftContractAddress, _tokenId)) {
@@ -792,6 +798,14 @@ contract NFTAuction is IERC721Receiver {
         address _nftContractAddress,
         uint256 _tokenId
     ) internal {
+        _payoutHighestBid(
+            _nftContractAddress,
+            _tokenId,
+            nftContractAuctions[_nftContractAddress][_tokenId].nftSeller
+        );
+        address nftRecipient = _getNftRecipient(_nftContractAddress, _tokenId);
+        _resetBids(_nftContractAddress, _tokenId);
+        //reset all params and transfer nft last to avoid reentrancy
         if (
             nftContractAuctions[_nftContractAddress][_tokenId].layers.length > 0
         ) {
@@ -805,29 +819,18 @@ contract NFTAuction is IERC721Receiver {
             ) {
                 nftContractAuctions[_nftContractAddress][_tokenId]
                     ._nftContract
-                    .safeTransferFrom(
+                    .transferFrom(
                     address(this),
-                    _getNftRecipient(_nftContractAddress, _tokenId),
+                    nftRecipient,
                     nftContractAuctions[_nftContractAddress][_tokenId].layers[i]
                 );
             }
         }
         nftContractAuctions[_nftContractAddress][_tokenId]
             ._nftContract
-            .safeTransferFrom(
-            address(this),
-            _getNftRecipient(_nftContractAddress, _tokenId),
-            _tokenId
-        );
-
-        _payoutHighestBid(
-            _nftContractAddress,
-            _tokenId,
-            nftContractAuctions[_nftContractAddress][_tokenId].nftSeller
-        );
+            .transferFrom(address(this), nftRecipient, _tokenId);
 
         _resetAuction(_nftContractAddress, _tokenId);
-        _resetBids(_nftContractAddress, _tokenId);
     }
 
     function _payoutHighestBid(
@@ -887,7 +890,7 @@ contract NFTAuction is IERC721Receiver {
             ) {
                 nftContractAuctions[_nftContractAddress][_tokenId]
                     ._nftContract
-                    .safeTransferFrom(
+                    .transferFrom(
                     address(this),
                     nftContractAuctions[_nftContractAddress][_tokenId]
                         .nftSeller,
@@ -897,7 +900,7 @@ contract NFTAuction is IERC721Receiver {
         }
         nftContractAuctions[_nftContractAddress][_tokenId]
             ._nftContract
-            .safeTransferFrom(
+            .transferFrom(
             address(this),
             nftContractAuctions[_nftContractAddress][_tokenId].nftSeller,
             _tokenId
@@ -950,18 +953,5 @@ contract NFTAuction is IERC721Receiver {
         if (_isMinimumBidMade(_nftContractAddress, _tokenId)) {
             _updateAuctionEnd(_nftContractAddress, _tokenId);
         }
-    }
-
-    /*╔══════════════════════════════╗
-      ║       IERC721 FUNCTIONS      ║
-      ╚══════════════════════════════╝*/
-    //ERC721Receiver function to ensure usage of ERC721 function safeTransferFrom
-    function onERC721Received(
-        address,
-        address,
-        uint256,
-        bytes memory
-    ) public virtual override returns (bytes4) {
-        return this.onERC721Received.selector;
     }
 }

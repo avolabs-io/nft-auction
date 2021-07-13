@@ -158,6 +158,22 @@ describe("NFTAuction Bids", function () {
         BigNumber.from(minPrice).toString()
       );
     });
+    it("should not allow user to specify 0 address as recipient", async function () {
+      await expect(
+        nftAuction
+          .connect(user2)
+          .makeCustomBid(
+            erc721.address,
+            tokenId,
+            zeroAddress,
+            minPrice,
+            zeroAddress,
+            {
+              value: minPrice,
+            }
+          )
+      ).to.be.revertedWith("cannot specify 0 address");
+    });
     // test for full functionality of makeBid still needed
   });
   describe("Test underbid functionality", function () {

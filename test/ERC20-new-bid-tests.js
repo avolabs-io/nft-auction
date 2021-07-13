@@ -181,6 +181,19 @@ describe("ERC20 New Bid Tests", function () {
         BigNumber.from(minPrice).toString()
       );
     });
+    it("should not allow user to specify 0 address as recipient", async function () {
+      await expect(
+        nftAuction
+          .connect(user2)
+          .makeCustomBid(
+            erc721.address,
+            tokenId,
+            erc20.address,
+            minPrice,
+            zeroAddress
+          )
+      ).to.be.revertedWith("cannot specify 0 address");
+    });
     it("should not allow user to bid with another ERC20 token", async function () {
       await expect(
         nftAuction
