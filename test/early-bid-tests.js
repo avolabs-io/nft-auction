@@ -9,6 +9,8 @@ const minPrice = 100;
 const newMinPrice = 50;
 const auctionBidPeriod = 86400; //seconds
 const bidIncreasePercentage = 10;
+const zeroAddress = "0x0000000000000000000000000000000000000000";
+const zeroERC20Tokens = 0;
 
 // Deploy and create a mock erc721 contract.
 
@@ -36,9 +38,11 @@ describe("Early bid tests", function () {
     //approve our smart contract to transfer this NFT
     await erc721.connect(user1).approve(nftAuction.address, 1);
 
-    await nftAuction.connect(user2).makeBid(erc721.address, tokenId, {
-      value: minPrice,
-    });
+    await nftAuction
+      .connect(user2)
+      .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
+        value: minPrice,
+      });
   });
   // whitelisted buyer should be able to purchase NFT
   it("should allow early bids on NFTs", async function () {
@@ -51,7 +55,7 @@ describe("Early bid tests", function () {
   it("should allow NFT owner to create auction", async function () {
     await nftAuction
       .connect(user1)
-      .createDefaultNftAuction(erc721.address, tokenId, minPrice);
+      .createDefaultNftAuction(erc721.address, tokenId, zeroAddress, minPrice);
 
     let result = await nftAuction.nftContractAuctions(erc721.address, tokenId);
     expect(result.minPrice).to.equal(BigNumber.from(minPrice).toString());
@@ -59,20 +63,25 @@ describe("Early bid tests", function () {
   it("should start auction period if early bid is higher than minimum", async function () {
     await nftAuction
       .connect(user1)
-      .createDefaultNftAuction(erc721.address, tokenId, minPrice);
+      .createDefaultNftAuction(erc721.address, tokenId, zeroAddress, minPrice);
 
     let result = await nftAuction.nftContractAuctions(erc721.address, tokenId);
     expect(result.auctionEnd).to.be.not.equal(BigNumber.from(0).toString());
   });
-  it("should not start auction period if early bid less than minimum", async function () {
+  it("should start auction period if early bid greater than minimum", async function () {
     await nftAuction
       .connect(user1)
-      .createDefaultNftAuction(erc721.address, tokenId, minPrice - 1);
+      .createDefaultNftAuction(
+        erc721.address,
+        tokenId,
+        zeroAddress,
+        minPrice - 1
+      );
 
     let result = await nftAuction.nftContractAuctions(erc721.address, tokenId);
     expect(result.auctionEnd).to.be.not.equal(BigNumber.from(0).toString());
   });
-  it("should not allow minPrice to be updated unless auction started", async function () {
+  it("should not allow minPrice to be updated by other users", async function () {
     await expect(
       nftAuction
         .connect(user2)

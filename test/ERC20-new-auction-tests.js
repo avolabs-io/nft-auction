@@ -7,12 +7,16 @@ const minPrice = 100;
 const newMinPrice = 50;
 const auctionBidPeriod = 86400; //seconds
 const bidIncreasePercentage = 10;
+const tokenAmount = 500;
 const zeroAddress = "0x0000000000000000000000000000000000000000";
+const zeroERC20Tokens = 0;
 // Deploy and create a mock erc721 contract.
 // 1 basic test, NFT sent from one person to another works correctly.
-describe("NFTAuction", function () {
+describe("ERC20 New Auction Tests", function () {
   let ERC721;
   let erc721;
+  let ERC20;
+  let erc20;
   let NFTAuction;
   let nftAuction;
   let contractOwner;
@@ -22,40 +26,46 @@ describe("NFTAuction", function () {
 
   beforeEach(async function () {
     ERC721 = await ethers.getContractFactory("ERC721MockContract");
+    ERC20 = await ethers.getContractFactory("ERC20MockContract");
     NFTAuction = await ethers.getContractFactory("NFTAuction");
     [ContractOwner, user1, user2, user3] = await ethers.getSigners();
+
     erc721 = await ERC721.deploy("my mockables", "MBA");
     await erc721.deployed();
     await erc721.mint(user1.address, tokenId);
+
+    erc20 = await ERC20.deploy("Mock ERC20", "MER");
+    await erc20.deployed();
+    await erc20.mint(user2.address, tokenAmount);
 
     nftAuction = await NFTAuction.deploy();
     await nftAuction.deployed();
     //approve our smart contract to transfer this NFT
     await erc721.connect(user1).approve(nftAuction.address, tokenId);
   });
-
-  it("Deploy mock erc721 and mint erc721 token", async function () {
-    expect(await erc721.ownerOf(tokenId)).to.equal(user1.address);
+  it("should deploy erc20 token and mint tokens", async function () {
+    expect(await erc20.balanceOf(user2.address)).to.equal(
+      BigNumber.from(tokenAmount).toString()
+    );
   });
-
+  it("should allow user to approve the smart contract", async function () {
+    await erc20.connect(user2).approve(nftAuction.address, minPrice);
+    expect(await erc20.allowance(user2.address, nftAuction.address)).to.equal(
+      BigNumber.from(minPrice).toString()
+    );
+  });
   it("Calling newNftAuction transfers NFT to contract", async function () {
     await nftAuction
       .connect(user1)
       .createNewNftAuction(
         erc721.address,
         tokenId,
-        zeroAddress,
+        erc20.address,
         minPrice,
         auctionBidPeriod,
         bidIncreasePercentage
       );
 
-    expect(await erc721.ownerOf(tokenId)).to.equal(nftAuction.address);
-  });
-  it("transferring nft token directly to contract", async function () {
-    await erc721
-      .connect(user1)
-      .transferFrom(user1.address, nftAuction.address, tokenId);
     expect(await erc721.ownerOf(tokenId)).to.equal(nftAuction.address);
   });
 
@@ -66,7 +76,7 @@ describe("NFTAuction", function () {
         .createNewNftAuction(
           erc721.address,
           tokenId,
-          zeroAddress,
+          erc20.address,
           minPrice,
           auctionBidPeriod,
           4
@@ -83,7 +93,7 @@ describe("NFTAuction", function () {
         .createNewNftAuction(
           erc721.address,
           tokenId,
-          zeroAddress,
+          erc20.address,
           0,
           auctionBidPeriod,
           bidIncreasePercentage
@@ -94,7 +104,12 @@ describe("NFTAuction", function () {
   it("should allow seller to create default Auction", async function () {
     await nftAuction
       .connect(user1)
-      .createDefaultNftAuction(erc721.address, tokenId, zeroAddress, minPrice);
+      .createDefaultNftAuction(
+        erc721.address,
+        tokenId,
+        erc20.address,
+        minPrice
+      );
 
     expect(await erc721.ownerOf(tokenId)).to.equal(nftAuction.address);
   });
@@ -106,7 +121,7 @@ describe("NFTAuction", function () {
         .createDefaultNftAuction(
           erc721.address,
           tokenId,
-          zeroAddress,
+          erc20.address,
           minPrice
         );
     });
@@ -121,9 +136,7 @@ describe("NFTAuction", function () {
         erc721.address,
         tokenId
       );
-      expect(result.minPrice.toString()).to.be.equal(
-        BigNumber.from(0).toString()
-      );
+      expect(result.ERC20Token).to.be.equal(zeroAddress);
     });
     it("should not allow other users to withdraw NFT", async function () {
       await expect(

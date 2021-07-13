@@ -7,6 +7,8 @@ const { BigNumber } = require("ethers");
 const tokenId = 1;
 const minPrice = 100;
 const newMinPrice = 50;
+const tokenBidAmount = 250;
+const tokenAmount = 500;
 const auctionBidPeriod = 86400; //seconds
 const bidIncreasePercentage = 10;
 const zeroAddress = "0x0000000000000000000000000000000000000000";
@@ -14,9 +16,12 @@ const zeroERC20Tokens = 0;
 
 // Deploy and create a mock erc721 contract.
 
-describe("NFTAuction Bids", function () {
+describe("ERC20 New Bid Tests", function () {
   let ERC721;
   let erc721;
+  let ERC20;
+  let erc20;
+  let otherErc20;
   let NFTAuction;
   let nftAuction;
   let contractOwner;
@@ -26,17 +31,33 @@ describe("NFTAuction Bids", function () {
 
   beforeEach(async function () {
     ERC721 = await ethers.getContractFactory("ERC721MockContract");
+    ERC20 = await ethers.getContractFactory("ERC20MockContract");
     NFTAuction = await ethers.getContractFactory("NFTAuction");
     [ContractOwner, user1, user2, user3] = await ethers.getSigners();
 
     erc721 = await ERC721.deploy("my mockables", "MBA");
     await erc721.deployed();
-    await erc721.mint(user1.address, tokenId);
+    await erc721.mint(user1.address, 1);
+
+    erc20 = await ERC20.deploy("Mock ERC20", "MER");
+    await erc20.deployed();
+    await erc20.mint(user1.address, tokenAmount);
+    await erc20.mint(user2.address, tokenAmount);
+
+    await erc20.mint(user3.address, tokenAmount);
+
+    otherErc20 = await ERC20.deploy("OtherToken", "OTK");
+    await otherErc20.deployed();
+
+    await otherErc20.mint(user2.address, tokenAmount);
 
     nftAuction = await NFTAuction.deploy();
     await nftAuction.deployed();
     //approve our smart contract to transfer this NFT
     await erc721.connect(user1).approve(nftAuction.address, tokenId);
+    await erc20.connect(user1).approve(nftAuction.address, tokenAmount);
+    await erc20.connect(user2).approve(nftAuction.address, tokenBidAmount);
+    await erc20.connect(user3).approve(nftAuction.address, tokenAmount);
   });
 
   describe("Test make bids and bid requirements", function () {
@@ -46,19 +67,17 @@ describe("NFTAuction Bids", function () {
         .createNewNftAuction(
           erc721.address,
           tokenId,
-          zeroAddress,
+          erc20.address,
           minPrice,
           auctionBidPeriod,
           bidIncreasePercentage
         );
     });
     // 1 basic test, NFT put up for auction can accept bids with ETH
-    it("Calling makeBid to bid on new NFTAuction", async function () {
+    it("Calling makeBid to bid on new NFTAuction with ERC20", async function () {
       await nftAuction
         .connect(user2)
-        .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
-          value: minPrice,
-        });
+        .makeBid(erc721.address, tokenId, erc20.address, minPrice);
       let result = await nftAuction.nftContractAuctions(
         erc721.address,
         tokenId
@@ -72,40 +91,51 @@ describe("NFTAuction Bids", function () {
       await expect(
         nftAuction
           .connect(user1)
-          .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
+          .makeBid(erc721.address, tokenId, erc20.address, minPrice)
+      ).to.be.revertedWith("Owner cannot bid on own NFT");
+    });
+    it("should ensure bidder cannot bid with eth and tokens", async function () {
+      await expect(
+        nftAuction
+          .connect(user2)
+          .makeBid(erc721.address, tokenId, erc20.address, minPrice, {
             value: minPrice,
           })
-      ).to.be.revertedWith("Owner cannot bid on own NFT");
+      ).to.be.revertedWith(
+        "Bid to be made in quantities of specified token or eth"
+      );
     });
 
     it("should not allow bid lower than minimum bid percentage", async function () {
       nftAuction
         .connect(user2)
-        .makeBid(erc721.address, tokenId, zeroAddress, 0, {
-          value: minPrice,
-        });
+        .makeBid(erc721.address, tokenId, erc20.address, minPrice);
       await expect(
         nftAuction
           .connect(user3)
-          .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
-            value: (minPrice * 101) / 100,
-          })
+          .makeBid(
+            erc721.address,
+            tokenId,
+            erc20.address,
+            (minPrice * 101) / 100
+          )
       ).to.be.revertedWith("Bid must be % more than previous highest bid");
     });
 
     it("should allow for new bid if higher than minimum percentage", async function () {
       await nftAuction
         .connect(user2)
-        .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
-          value: minPrice,
-        });
+        .makeBid(erc721.address, tokenId, erc20.address, minPrice);
       const bidIncreaseByMinPercentage =
         (minPrice * (100 + bidIncreasePercentage)) / 100;
       await nftAuction
         .connect(user3)
-        .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
-          value: bidIncreaseByMinPercentage,
-        });
+        .makeBid(
+          erc721.address,
+          tokenId,
+          erc20.address,
+          bidIncreaseByMinPercentage
+        );
       let result = await nftAuction.nftContractAuctions(
         erc721.address,
         tokenId
@@ -118,9 +148,7 @@ describe("NFTAuction Bids", function () {
     it("should not allow owner to withdraw NFT if valid bid made", async function () {
       await nftAuction
         .connect(user2)
-        .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
-          value: minPrice,
-        });
+        .makeBid(erc721.address, tokenId, erc20.address, minPrice);
       await expect(
         nftAuction.connect(user1).withdrawNft(erc721.address, tokenId)
       ).to.be.revertedWith("The auction has a valid bid made");
@@ -128,9 +156,7 @@ describe("NFTAuction Bids", function () {
     it("should not allow bidder to withdraw if min price exceeded", async function () {
       await nftAuction
         .connect(user2)
-        .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
-          value: minPrice,
-        });
+        .makeBid(erc721.address, tokenId, erc20.address, minPrice);
       await expect(
         nftAuction.connect(user2).withdrawBid(erc721.address, tokenId)
       ).to.be.revertedWith("The auction has a valid bid made");
@@ -142,12 +168,9 @@ describe("NFTAuction Bids", function () {
         .makeCustomBid(
           erc721.address,
           tokenId,
-          zeroAddress,
-          zeroERC20Tokens,
-          user3.address,
-          {
-            value: minPrice,
-          }
+          erc20.address,
+          minPrice,
+          user3.address
         );
       let result = await nftAuction.nftContractAuctions(
         erc721.address,
@@ -156,6 +179,21 @@ describe("NFTAuction Bids", function () {
       expect(result.nftRecipient).to.be.equal(user3.address);
       expect(result.nftHighestBid.toString()).to.be.equal(
         BigNumber.from(minPrice).toString()
+      );
+    });
+    it("should not allow user to bid with another ERC20 token", async function () {
+      await expect(
+        nftAuction
+          .connect(user2)
+          .makeCustomBid(
+            erc721.address,
+            tokenId,
+            otherErc20.address,
+            minPrice,
+            user3.address
+          )
+      ).to.be.revertedWith(
+        "Bid to be made in quantities of specified token or eth"
       );
     });
     // test for full functionality of makeBid still needed
@@ -170,16 +208,14 @@ describe("NFTAuction Bids", function () {
         .createNewNftAuction(
           erc721.address,
           tokenId,
-          zeroAddress,
+          erc20.address,
           minPrice,
           auctionBidPeriod,
           bidIncreasePercentage
         );
       await nftAuction
         .connect(user2)
-        .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
-          value: underBid,
-        });
+        .makeBid(erc721.address, tokenId, erc20.address, underBid);
       result = await nftAuction.nftContractAuctions(erc721.address, tokenId);
       user1BalanceBeforePayout = await user2.getBalance();
     });
@@ -201,26 +237,14 @@ describe("NFTAuction Bids", function () {
       expect(result.nftHighestBidder).to.be.equal(zeroAddress);
     });
     it("should transfer the correct amount to the bidder if they withdraw", async function () {
-      const gasPrice = 1;
-      const tx = await nftAuction
-        .connect(user2)
-        .withdrawBid(erc721.address, tokenId, { gasPrice: gasPrice });
-      const txResponse = await tx.wait();
-      const receipt = await ethers.provider.getTransactionReceipt(
-        txResponse.transactionHash
+      expect(await erc20.balanceOf(user2.address)).to.equal(
+        BigNumber.from(tokenAmount - underBid).toString()
       );
-      const gasUsed = receipt.gasUsed;
-      const gasUsedBN = BigNumber.from(gasUsed);
-      const gasCost = BigNumber.from(gasPrice).mul(gasUsedBN);
-
-      const balBefore = BigNumber.from(user1BalanceBeforePayout);
-      const amount = BigNumber.from(underBid);
-      // multiply gas cost by gas used
-      const expectedBalanceAfterPayout = balBefore.add(amount).sub(gasCost);
-      //confirm that the user gets their withdrawn bid minus the gas cost
-      const userBalance = await user2.getBalance();
-      expect(userBalance.toString()).to.be.equal(
-        expectedBalanceAfterPayout.toString()
+      await nftAuction.connect(user2).withdrawBid(erc721.address, tokenId);
+      result = await nftAuction.nftContractAuctions(erc721.address, tokenId);
+      expect(result.nftHighestBidder).to.be.equal(zeroAddress);
+      expect(await erc20.balanceOf(user2.address)).to.equal(
+        BigNumber.from(tokenAmount).toString()
       );
     });
     it("should not allow other users to withdraw underbid", async function () {
@@ -254,6 +278,17 @@ describe("NFTAuction Bids", function () {
       );
       expect(result.nftHighestBid.toString()).to.be.equal(
         BigNumber.from(underBid).toString()
+      );
+    });
+  });
+  describe("Test early bids with erc20 auctions", async function () {
+    it("not allow early bids with ERC20 tokens", async function () {
+      await expect(
+        nftAuction
+          .connect(user2)
+          .makeBid(erc721.address, tokenId, erc20.address, minPrice)
+      ).to.be.revertedWith(
+        "Bid to be made in quantities of specified token or eth"
       );
     });
   });
