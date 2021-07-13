@@ -6,6 +6,10 @@ const { network } = require("hardhat");
 const tokenId = 1;
 const minPrice = 10000;
 const newPrice = 15000;
+const tokenBidAmount = 25000;
+const tokenAmount = 50000;
+const zeroAddress = "0x0000000000000000000000000000000000000000";
+const zeroERC20Tokens = 0;
 
 // Deploy and create a mock erc721 contract.
 // Test end to end auction
@@ -42,30 +46,43 @@ describe("End to end auction tests", function () {
     beforeEach(async function () {
       await nftAuction
         .connect(user1)
-        .createDefaultNftAuction(erc721.address, tokenId, minPrice);
+        .createDefaultNftAuction(
+          erc721.address,
+          tokenId,
+          zeroAddress,
+          minPrice
+        );
     });
     it("should allow multiple bids and conclude auction after end period", async function () {
-      nftAuction.connect(user2).makeBid(erc721.address, tokenId, {
-        value: minPrice,
-      });
+      nftAuction
+        .connect(user2)
+        .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
+          value: minPrice,
+        });
       const bidIncreaseByMinPercentage =
         (minPrice * (100 + bidIncreasePercentage)) / 100;
       await network.provider.send("evm_increaseTime", [auctionBidPeriod / 2]);
-      await nftAuction.connect(user3).makeBid(erc721.address, tokenId, {
-        value: bidIncreaseByMinPercentage,
-      });
+      await nftAuction
+        .connect(user3)
+        .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
+          value: bidIncreaseByMinPercentage,
+        });
       await network.provider.send("evm_increaseTime", [86000]);
       const bidIncreaseByMinPercentage2 =
         (bidIncreaseByMinPercentage * (100 + bidIncreasePercentage)) / 100;
-      await nftAuction.connect(user2).makeBid(erc721.address, tokenId, {
-        value: bidIncreaseByMinPercentage2,
-      });
+      await nftAuction
+        .connect(user2)
+        .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
+          value: bidIncreaseByMinPercentage2,
+        });
       await network.provider.send("evm_increaseTime", [86001]);
       const bidIncreaseByMinPercentage3 =
         (bidIncreaseByMinPercentage2 * (100 + bidIncreasePercentage)) / 100;
-      await nftAuction.connect(user3).makeBid(erc721.address, tokenId, {
-        value: bidIncreaseByMinPercentage3,
-      });
+      await nftAuction
+        .connect(user3)
+        .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
+          value: bidIncreaseByMinPercentage3,
+        });
       //should not be able to settle auction yet
       await expect(
         nftAuction.connect(user3).settleAuction(erc721.address, tokenId)
@@ -85,21 +102,26 @@ describe("End to end auction tests", function () {
         .createNewNftAuction(
           erc721.address,
           tokenId,
+          zeroAddress,
           minPrice,
           auctionBidPeriod,
           bidIncreasePercentage
         );
     });
     it("should allow multiple bids and conclude auction after end period", async function () {
-      nftAuction.connect(user2).makeBid(erc721.address, tokenId, {
-        value: minPrice,
-      });
+      nftAuction
+        .connect(user2)
+        .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
+          value: minPrice,
+        });
       const bidIncreaseByMinPercentage =
         (minPrice * (100 + bidIncreasePercentage)) / 100;
       await network.provider.send("evm_increaseTime", [43200]);
-      await nftAuction.connect(user3).makeBid(erc721.address, tokenId, {
-        value: bidIncreaseByMinPercentage,
-      });
+      await nftAuction
+        .connect(user3)
+        .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
+          value: bidIncreaseByMinPercentage,
+        });
       await expect(
         nftAuction
           .connect(user1)
@@ -109,15 +131,19 @@ describe("End to end auction tests", function () {
       await network.provider.send("evm_increaseTime", [86000]);
       const bidIncreaseByMinPercentage2 =
         (bidIncreaseByMinPercentage * (100 + bidIncreasePercentage)) / 100;
-      await nftAuction.connect(user2).makeBid(erc721.address, tokenId, {
-        value: bidIncreaseByMinPercentage2,
-      });
+      await nftAuction
+        .connect(user2)
+        .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
+          value: bidIncreaseByMinPercentage2,
+        });
       await network.provider.send("evm_increaseTime", [86001]);
       const bidIncreaseByMinPercentage3 =
         (bidIncreaseByMinPercentage2 * (100 + bidIncreasePercentage)) / 100;
-      await nftAuction.connect(user3).makeBid(erc721.address, tokenId, {
-        value: bidIncreaseByMinPercentage3,
-      });
+      await nftAuction
+        .connect(user3)
+        .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
+          value: bidIncreaseByMinPercentage3,
+        });
       //should not be able to settle auction yet
       await expect(
         nftAuction.connect(user3).settleAuction(erc721.address, tokenId)
@@ -130,9 +156,16 @@ describe("End to end auction tests", function () {
       await expect(
         nftAuction
           .connect(user2)
-          .makeCustomBid(erc721.address, tokenId, user4.address, {
-            value: bidIncreaseByMinPercentage4,
-          })
+          .makeCustomBid(
+            erc721.address,
+            tokenId,
+            zeroAddress,
+            zeroERC20Tokens,
+            user4.address,
+            {
+              value: bidIncreaseByMinPercentage4,
+            }
+          )
       ).to.be.revertedWith("Auction has ended");
       await nftAuction.connect(user3).settleAuction(erc721.address, tokenId);
       expect(await erc721.ownerOf(tokenId)).to.equal(user3.address);
@@ -142,9 +175,11 @@ describe("End to end auction tests", function () {
     bidIncreasePercentage = 20;
     auctionBidPeriod = 106400;
     beforeEach(async function () {
-      await nftAuction.connect(user2).makeBid(erc721.address, tokenId, {
-        value: minPrice - 1,
-      });
+      await nftAuction
+        .connect(user2)
+        .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
+          value: minPrice - 1,
+        });
     });
     it("should allow owner to create auction which concludes after multiple bids", async function () {
       await nftAuction
@@ -152,35 +187,44 @@ describe("End to end auction tests", function () {
         .createNewNftAuction(
           erc721.address,
           tokenId,
+          zeroAddress,
           minPrice,
           auctionBidPeriod,
           bidIncreasePercentage
         );
 
       await expect(
-        nftAuction.connect(user2).makeBid(erc721.address, tokenId, {
-          value: minPrice,
-        })
+        nftAuction
+          .connect(user2)
+          .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
+            value: minPrice,
+          })
       ).to.be.revertedWith("Bid must be % more than previous highest bid");
 
       const bidIncreaseByMinPercentage =
         (minPrice * (100 + bidIncreasePercentage)) / 100;
       await network.provider.send("evm_increaseTime", [43200]);
-      await nftAuction.connect(user3).makeBid(erc721.address, tokenId, {
-        value: bidIncreaseByMinPercentage,
-      });
+      await nftAuction
+        .connect(user3)
+        .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
+          value: bidIncreaseByMinPercentage,
+        });
       await network.provider.send("evm_increaseTime", [86000]);
       const bidIncreaseByMinPercentage2 =
         (bidIncreaseByMinPercentage * (100 + bidIncreasePercentage)) / 100;
-      await nftAuction.connect(user2).makeBid(erc721.address, tokenId, {
-        value: bidIncreaseByMinPercentage2,
-      });
+      await nftAuction
+        .connect(user2)
+        .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
+          value: bidIncreaseByMinPercentage2,
+        });
       await network.provider.send("evm_increaseTime", [86001]);
       const bidIncreaseByMinPercentage3 =
         (bidIncreaseByMinPercentage2 * (100 + bidIncreasePercentage)) / 100;
-      await nftAuction.connect(user3).makeBid(erc721.address, tokenId, {
-        value: bidIncreaseByMinPercentage3,
-      });
+      await nftAuction
+        .connect(user3)
+        .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
+          value: bidIncreaseByMinPercentage3,
+        });
       //should not be able to settle auction yet
       await expect(
         nftAuction.connect(user3).settleAuction(erc721.address, tokenId)
@@ -200,6 +244,7 @@ describe("End to end auction tests", function () {
         .createNewNftAuction(
           erc721.address,
           tokenId,
+          zeroAddress,
           minPrice,
           auctionBidPeriod,
           bidIncreasePercentage
@@ -208,31 +253,54 @@ describe("End to end auction tests", function () {
     it("should allow multiple custom bids and conclude auction after end period", async function () {
       nftAuction
         .connect(user2)
-        .makeCustomBid(erc721.address, tokenId, user4.address, {
-          value: minPrice,
-        });
+        .makeCustomBid(
+          erc721.address,
+          tokenId,
+          zeroAddress,
+          zeroERC20Tokens,
+          user4.address,
+          {
+            value: minPrice,
+          }
+        );
       const bidIncreaseByMinPercentage =
         (minPrice * (100 + bidIncreasePercentage)) / 100;
       await network.provider.send("evm_increaseTime", [43200]);
-      await nftAuction.connect(user3).makeBid(erc721.address, tokenId, {
-        value: bidIncreaseByMinPercentage,
-      });
+      await nftAuction
+        .connect(user3)
+        .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
+          value: bidIncreaseByMinPercentage,
+        });
       await network.provider.send("evm_increaseTime", [86000]);
       const bidIncreaseByMinPercentage2 =
         (bidIncreaseByMinPercentage * (100 + bidIncreasePercentage)) / 100;
       await nftAuction
         .connect(user2)
-        .makeCustomBid(erc721.address, tokenId, user4.address, {
-          value: bidIncreaseByMinPercentage2,
-        });
+        .makeCustomBid(
+          erc721.address,
+          tokenId,
+          zeroAddress,
+          zeroERC20Tokens,
+          user4.address,
+          {
+            value: bidIncreaseByMinPercentage2,
+          }
+        );
       await network.provider.send("evm_increaseTime", [86001]);
       const bidIncreaseByMinPercentage3 =
         (bidIncreaseByMinPercentage2 * (100 + bidIncreasePercentage)) / 100;
       await nftAuction
         .connect(user3)
-        .makeCustomBid(erc721.address, tokenId, user4.address, {
-          value: bidIncreaseByMinPercentage3,
-        });
+        .makeCustomBid(
+          erc721.address,
+          tokenId,
+          zeroAddress,
+          zeroERC20Tokens,
+          user4.address,
+          {
+            value: bidIncreaseByMinPercentage3,
+          }
+        );
       //should not be able to settle auction yet
       await expect(
         nftAuction.connect(user3).settleAuction(erc721.address, tokenId)
@@ -241,6 +309,114 @@ describe("End to end auction tests", function () {
       //auction has ended
       await nftAuction.connect(user3).settleAuction(erc721.address, tokenId);
       expect(await erc721.ownerOf(tokenId)).to.equal(user4.address);
+    });
+  });
+  describe("ERC20 auction end to end", async function () {
+    bidIncreasePercentage = 10;
+    auctionBidPeriod = 86400;
+    beforeEach(async function () {
+      ERC20 = await ethers.getContractFactory("ERC20MockContract");
+
+      erc20 = await ERC20.deploy("Mock ERC20", "MER");
+      await erc20.deployed();
+      await erc20.mint(user1.address, tokenAmount);
+      await erc20.mint(user2.address, tokenAmount);
+
+      await erc20.mint(user3.address, tokenAmount);
+
+      otherErc20 = await ERC20.deploy("OtherToken", "OTK");
+      await otherErc20.deployed();
+
+      await otherErc20.mint(user3.address, tokenAmount);
+
+      await erc20.connect(user1).approve(nftAuction.address, tokenAmount);
+      await erc20.connect(user2).approve(nftAuction.address, tokenBidAmount);
+      await erc20.connect(user3).approve(nftAuction.address, tokenAmount);
+      await otherErc20.connect(user3).approve(nftAuction.address, tokenAmount);
+
+      await nftAuction
+        .connect(user1)
+        .createDefaultNftAuction(
+          erc721.address,
+          tokenId,
+          erc20.address,
+          minPrice
+        );
+    });
+    it("should allow multiple bids and conclude auction after end period", async function () {
+      nftAuction
+        .connect(user2)
+        .makeBid(erc721.address, tokenId, erc20.address, minPrice);
+      const bidIncreaseByMinPercentage =
+        (minPrice * (100 + bidIncreasePercentage)) / 100;
+      await network.provider.send("evm_increaseTime", [auctionBidPeriod / 2]);
+      await nftAuction
+        .connect(user3)
+        .makeBid(
+          erc721.address,
+          tokenId,
+          erc20.address,
+          bidIncreaseByMinPercentage
+        );
+      await network.provider.send("evm_increaseTime", [86000]);
+      const bidIncreaseByMinPercentage2 =
+        (bidIncreaseByMinPercentage * (100 + bidIncreasePercentage)) / 100;
+      await nftAuction
+        .connect(user2)
+        .makeBid(
+          erc721.address,
+          tokenId,
+          erc20.address,
+          bidIncreaseByMinPercentage2
+        );
+      await network.provider.send("evm_increaseTime", [86001]);
+      const bidIncreaseByMinPercentage3 =
+        (bidIncreaseByMinPercentage2 * (100 + bidIncreasePercentage)) / 100;
+      await expect(
+        nftAuction
+          .connect(user3)
+          .makeCustomBid(
+            erc721.address,
+            tokenId,
+            otherErc20.address,
+            bidIncreaseByMinPercentage3,
+            user3.address
+          )
+      ).to.be.revertedWith(
+        "Bid to be made in quantities of specified token or eth"
+      );
+      await expect(
+        nftAuction
+          .connect(user3)
+          .makeCustomBid(
+            erc721.address,
+            tokenId,
+            zeroAddress,
+            zeroERC20Tokens,
+            user4.address,
+            {
+              value: bidIncreaseByMinPercentage3,
+            }
+          )
+      ).to.be.revertedWith(
+        "Bid to be made in quantities of specified token or eth"
+      );
+      await nftAuction
+        .connect(user3)
+        .makeBid(
+          erc721.address,
+          tokenId,
+          erc20.address,
+          bidIncreaseByMinPercentage3
+        );
+      //should not be able to settle auction yet
+      await expect(
+        nftAuction.connect(user3).settleAuction(erc721.address, tokenId)
+      ).to.be.revertedWith("Auction is not yet over");
+      await network.provider.send("evm_increaseTime", [auctionBidPeriod + 1]);
+      //auction has ended
+      await nftAuction.connect(user3).settleAuction(erc721.address, tokenId);
+      expect(await erc721.ownerOf(tokenId)).to.equal(user3.address);
     });
   });
 });
