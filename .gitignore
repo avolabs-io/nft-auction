@@ -7,4 +7,3 @@ coverage
 coverage.json
 arguments.js
 deploy.js
-hardhat.config.js
