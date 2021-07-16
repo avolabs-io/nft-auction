@@ -124,6 +124,7 @@ describe("NFTAuction", function () {
       expect(result.minPrice.toString()).to.be.equal(
         BigNumber.from(0).toString()
       );
+      expect(result.nftSeller).to.be.equal(zeroAddress);
     });
     it("should not allow other users to withdraw NFT", async function () {
       await expect(

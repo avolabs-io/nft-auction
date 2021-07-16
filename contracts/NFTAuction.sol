@@ -227,6 +227,13 @@ contract NFTAuction {
             .whiteListedBuyer);
     }
 
+    /**
+     * Payment is accepted in the following scenarios:
+     * (1) Auction already created - can accept ETH or Specified Token
+     *  --------> Cannot bid with ETH & an ERC20 Token together in any circumstance<------
+     * (2) Auction not created - only ETH accepted (cannot early bid with an ERC20 Token
+     * (3) Cannot make a zero bid (no ETH or Token amount)
+     */
     function _isPaymentAccepted(
         address _nftContractAddress,
         uint256 _tokenId,
@@ -369,6 +376,10 @@ contract NFTAuction {
         }
     }
 
+    /**
+     * Create an auction that uses the default bid increase percentage
+     * & the default auction bid period
+     */
     function createDefaultNftAuction(
         address _nftContractAddress,
         uint256 _tokenId,
@@ -397,17 +408,16 @@ contract NFTAuction {
             _bidIncreasePercentage >= minimumSettableIncreasePercentage,
             "Bid increase percentage must be greater than minimum settable increase percentage"
         );
+        nftContractAuctions[_nftContractAddress][_tokenId]
+        .auctionBidPeriod = _auctionBidPeriod;
+        nftContractAuctions[_nftContractAddress][_tokenId]
+        .bidIncreasePercentage = _bidIncreasePercentage;
         _createNewNftAuction(
             _nftContractAddress,
             _tokenId,
             _erc20Token,
             _minPrice
         );
-
-        nftContractAuctions[_nftContractAddress][_tokenId]
-        .auctionBidPeriod = _auctionBidPeriod;
-        nftContractAuctions[_nftContractAddress][_tokenId]
-        .bidIncreasePercentage = _bidIncreasePercentage;
 
         emit NftAuctionCreated(
             _nftContractAddress,
@@ -474,6 +484,10 @@ contract NFTAuction {
         uint256 _auctionBidPeriod, //this is the time that the auction lasts until another bid occurs
         uint256 _bidIncreasePercentage
     ) external {
+        nftContractAuctions[_nftContractAddress][_tokenIdMaster]
+        .auctionBidPeriod = _auctionBidPeriod;
+        nftContractAuctions[_nftContractAddress][_tokenIdMaster]
+        .bidIncreasePercentage = _bidIncreasePercentage;
         _createBatchNftAuction(
             _nftContractAddress,
             _tokenIdMaster,
@@ -481,15 +495,18 @@ contract NFTAuction {
             _minPrice,
             _layers
         );
-        nftContractAuctions[_nftContractAddress][_tokenIdMaster]
-        .auctionBidPeriod = _auctionBidPeriod;
-        nftContractAuctions[_nftContractAddress][_tokenIdMaster]
-        .bidIncreasePercentage = _bidIncreasePercentage;
     }
 
     /*╔══════════════════════════════╗
       ║       WHITELIST SALES        ║
       ╚══════════════════════════════╝*/
+
+    /********************************************************************
+     * Allows for a standard sale mechanism where the NFT seller can    *
+     * can select an address to be whitelisted. This address is then    *
+     * allowed to make a bid on the NFT. No other address can bid on    *
+     * the NFT.                                                         *
+     ********************************************************************/
     function _updateWhitelistedSale(
         address _nftContractAddress,
         uint256 _tokenId,
@@ -572,6 +589,12 @@ contract NFTAuction {
       ║        BID FUNCTIONS        ║
       ╚═════════════════════════════╝*/
 
+    /********************************************************************
+     * Make bids with ETH or an ERC20 Token specified by the NFT seller.*
+     * Additionally, a whitelisted buyer can pay the asking price       *
+     * to conclude a whitelisted sale of an NFT.                        *
+     ********************************************************************/
+
     function _makeBid(
         address _nftContractAddress,
         uint256 _tokenId,
@@ -589,10 +612,6 @@ contract NFTAuction {
         _updateOngoingAuction(_nftContractAddress, _tokenId, _tokenAmount);
     }
 
-    //Add the functionality that holds the auction until first bid.
-    // the auction time should then kick off
-    //each new bid should add time to the auction length
-    //each new bid should increase by a percentage
     function makeBid(
         address _nftContractAddress,
         uint256 _tokenId,
@@ -675,6 +694,9 @@ contract NFTAuction {
         nftContractAuctions[_nftContractAddress][_tokenId].auctionBidPeriod = 0;
         nftContractAuctions[_nftContractAddress][_tokenId]
         .bidIncreasePercentage = 0;
+        nftContractAuctions[_nftContractAddress][_tokenId].nftSeller = address(
+            0
+        );
         nftContractAuctions[_nftContractAddress][_tokenId]
         .whiteListedBuyer = address(0);
         delete nftContractAuctions[_nftContractAddress][_tokenId].layers;
@@ -805,7 +827,7 @@ contract NFTAuction {
         );
         address nftRecipient = _getNftRecipient(_nftContractAddress, _tokenId);
         _resetBids(_nftContractAddress, _tokenId);
-        //reset all params and transfer nft last to avoid reentrancy
+        //reset bid and transfer nft last to avoid reentrancy
         if (
             nftContractAuctions[_nftContractAddress][_tokenId].layers.length > 0
         ) {

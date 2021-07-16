@@ -15,5 +15,8 @@
     "hardhat": "^2.4.1",
     "hardhat-gas-reporter": "^1.0.4",
     "solidity-coverage": "^0.7.16"
+  },
+  "devDependencies": {
+    "@nomiclabs/hardhat-etherscan": "^2.1.4"
   }
 }
