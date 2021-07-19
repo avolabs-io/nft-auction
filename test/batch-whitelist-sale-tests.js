@@ -10,6 +10,8 @@ const newPrice = 15000;
 const auctionBidPeriod = 86400; //seconds
 const zeroAddress = "0x0000000000000000000000000000000000000000";
 const zeroERC20Tokens = 0;
+const emptyFeeRecipients = [];
+const emptyFeePercentages = [];
 
 // Deploy and create a mock erc721 contract.
 // Test end to end auction
@@ -51,7 +53,9 @@ describe("Batch Whitelist Sale", function () {
         zeroAddress,
         minPrice,
         layers,
-        user2.address
+        user2.address,
+        emptyFeeRecipients,
+        emptyFeePercentages
       );
     expect(await erc721.ownerOf(tokenIdMaster)).to.equal(nftAuction.address);
     for (let i = 0; i < layers.length; i++) {
@@ -68,7 +72,9 @@ describe("Batch Whitelist Sale", function () {
           zeroAddress,
           0,
           layers,
-          user2.address
+          user2.address,
+          emptyFeeRecipients,
+          emptyFeePercentages
         )
     ).to.be.revertedWith("Minimum price cannot be 0");
   });
@@ -82,7 +88,9 @@ describe("Batch Whitelist Sale", function () {
           zeroAddress,
           minPrice,
           layers,
-          user2.address
+          user2.address,
+          emptyFeeRecipients,
+          emptyFeePercentages
         );
     });
     it("should allow seller to withdraw NFTs if no bids made", async function () {
@@ -250,7 +258,9 @@ describe("Batch Whitelist Sale", function () {
           zeroAddress,
           minPrice,
           layers,
-          user3.address
+          user3.address,
+          emptyFeeRecipients,
+          emptyFeePercentages
         );
 
       expect(await erc721.ownerOf(tokenIdMaster)).to.equal(user3.address);
@@ -272,7 +282,9 @@ describe("Batch Whitelist Sale", function () {
           zeroAddress,
           minPrice,
           layers,
-          user2.address
+          user2.address,
+          emptyFeeRecipients,
+          emptyFeePercentages
         );
       result = await nftAuction.nftContractAuctions(
         erc721.address,
@@ -289,7 +301,9 @@ describe("Batch Whitelist Sale", function () {
           zeroAddress,
           minPrice,
           layers,
-          user2.address
+          user2.address,
+          emptyFeeRecipients,
+          emptyFeePercentages
         );
       result = await nftAuction.nftContractAuctions(
         erc721.address,

@@ -13,6 +13,8 @@ const auctionBidPeriod = 86400; //seconds
 const bidIncreasePercentage = 10;
 const zeroAddress = "0x0000000000000000000000000000000000000000";
 const zeroERC20Tokens = 0;
+const emptyFeeRecipients = [];
+const emptyFeePercentages = [];
 
 // Deploy and create a mock erc721 contract.
 
@@ -60,7 +62,9 @@ describe("ERC20 Whitelist Sale Tests", function () {
         tokenId,
         erc20.address,
         minPrice,
-        user2.address //whitelisted buyer
+        user2.address, //whitelisted buyer
+        emptyFeeRecipients,
+        emptyFeePercentages
       );
     });
     // whitelisted buyer should be able to purchase NFT

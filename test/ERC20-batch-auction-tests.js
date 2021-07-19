@@ -13,6 +13,8 @@ const auctionBidPeriod = 106400; //seconds
 const layers = [2, 3, 4, 5, 6, 7, 8, 9, 10];
 const zeroAddress = "0x0000000000000000000000000000000000000000";
 const zeroERC20Tokens = 0;
+const emptyFeeRecipients = [];
+const emptyFeePercentages = [];
 
 // Deploy and create a mock erc721 contract.
 // Test end to end auction
@@ -68,7 +70,9 @@ describe("Batch Auctions with ERC20 Tokens", function () {
         tokenIdMaster,
         erc20.address,
         minPrice,
-        layers
+        layers,
+        emptyFeeRecipients,
+        emptyFeePercentages
       );
     expect(await erc721.ownerOf(tokenIdMaster)).to.equal(nftAuction.address);
     for (let i = 0; i < layers.length; i++) {
@@ -84,7 +88,9 @@ describe("Batch Auctions with ERC20 Tokens", function () {
           tokenIdMaster,
           erc20.address,
           0,
-          layers
+          layers,
+          emptyFeeRecipients,
+          emptyFeePercentages
         )
     ).to.be.revertedWith("Minimum price cannot be 0");
   });
@@ -98,7 +104,9 @@ describe("Batch Auctions with ERC20 Tokens", function () {
           tokenIdMaster,
           erc20.address,
           minPrice,
-          layers
+          layers,
+          emptyFeeRecipients,
+          emptyFeePercentages
         );
     });
     it("should allow seller to withdraw NFTs if no bids made", async function () {
@@ -162,7 +170,7 @@ describe("Batch Auctions with ERC20 Tokens", function () {
    */
   describe(" Custom Batch Auction Bids and settlement tests", async function () {
     beforeEach(async function () {
-      bidIncreasePercentage = 15;
+      bidIncreasePercentage = 1500;
       await nftAuction
         .connect(user1)
         .createBatchNftAuction(
@@ -172,7 +180,9 @@ describe("Batch Auctions with ERC20 Tokens", function () {
           minPrice,
           layers,
           auctionBidPeriod,
-          bidIncreasePercentage
+          bidIncreasePercentage,
+          emptyFeeRecipients,
+          emptyFeePercentages
         );
     });
     it("should allow seller to withdraw NFTs if no bids made", async function () {

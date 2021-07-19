@@ -21,11 +21,13 @@ contract NFTAuction {
         uint256 nftHighestBid;
         uint256 bidIncreasePercentage;
         uint256[] layers;
+        uint32[] feePercentages;
         address nftHighestBidder;
         address nftSeller;
         address whiteListedBuyer;
         address nftRecipient;
         address ERC20Token;
+        address[] feeRecipients;
     }
     uint256 public defaultBidIncreasePercentage;
     uint256 public defaultAuctionBidPeriod;
@@ -116,8 +118,9 @@ contract NFTAuction {
             _tokenId
         ]
         .nftHighestBid *
-            (100 + _getBidIncreasePercentage(_nftContractAddress, _tokenId))) /
-            100;
+            (10000 +
+                _getBidIncreasePercentage(_nftContractAddress, _tokenId))) /
+            10000;
         require(
             msg.value >= bidIncreaseAmount || _tokenAmount >= bidIncreaseAmount,
             "Bid must be % more than previous highest bid"
@@ -161,8 +164,44 @@ contract NFTAuction {
         _;
     }
 
+    modifier isAuctionOver(address _nftContractAddress, uint256 _tokenId) {
+        require(
+            !_isAuctionOngoing(_nftContractAddress, _tokenId),
+            "Auction is not yet over"
+        );
+        _;
+    }
+
     modifier notZeroAddress(address _address) {
         require(_address != address(0), "cannot specify 0 address");
+        _;
+    }
+
+    modifier increasePercentageAboveMinimum(uint256 _bidIncreasePercentage) {
+        require(
+            _bidIncreasePercentage >= minimumSettableIncreasePercentage,
+            "Bid increase percentage must be greater than minimum settable increase percentage"
+        );
+        _;
+    }
+
+    modifier isFeePercentagesLessThanMaximum(uint32[] memory _feePercentages) {
+        uint32 totalPercent;
+        for (uint256 i = 0; i < _feePercentages.length; i++) {
+            totalPercent = totalPercent + _feePercentages[i];
+        }
+        require(totalPercent <= 10000, "fee percentages exceed maximum");
+        _;
+    }
+
+    modifier correctFeeRecipientsAndPercentages(
+        uint256 _recipientsLength,
+        uint256 _percentagesLength
+    ) {
+        require(
+            _recipientsLength == _percentagesLength,
+            "mismatched fee recipients and percentages"
+        );
         _;
     }
 
@@ -170,7 +209,7 @@ contract NFTAuction {
     constructor() {
         defaultBidIncreasePercentage = 10;
         defaultAuctionBidPeriod = 86400; //1 day
-        minimumSettableIncreasePercentage = 5;
+        minimumSettableIncreasePercentage = 500;
     }
 
     /*╔══════════════════════════════╗
@@ -257,6 +296,14 @@ contract NFTAuction {
         return
             nftContractAuctions[_nftContractAddress][_tokenId].ERC20Token !=
             address(0);
+    }
+
+    function _getPaymentAmount(uint256 _totalBid, uint256 _percentage)
+        internal
+        pure
+        returns (uint256)
+    {
+        return (_totalBid * (_percentage)) / 10000;
     }
 
     /*╔══════════════════════════════╗
@@ -347,16 +394,37 @@ contract NFTAuction {
     /*╔══════════════════════════════╗
       ║       AUCTION CREATION       ║
       ╚══════════════════════════════╝*/
+
+    /**
+     * Setup parameters applicable to all auctions and whitelised sales:
+     * -> minimum price : _minPrice
+     * -> the nft seller: msg.sender
+     * -> The fee recipients & their respective percentages for a sucessful auction/sale
+     */
     function _setupAuction(
         address _nftContractAddress,
         uint256 _tokenId,
         address _erc20Token,
-        uint256 _minPrice
-    ) internal {
+        uint256 _minPrice,
+        address[] memory _feeRecipients,
+        uint32[] memory _feePercentages
+    )
+        internal
+        auctionMinPriceGreaterThanZero(_minPrice)
+        correctFeeRecipientsAndPercentages(
+            _feeRecipients.length,
+            _feePercentages.length
+        )
+        isFeePercentagesLessThanMaximum(_feePercentages)
+    {
         if (_erc20Token != address(0)) {
             nftContractAuctions[_nftContractAddress][_tokenId]
             .ERC20Token = _erc20Token;
         }
+        nftContractAuctions[_nftContractAddress][_tokenId]
+        .feeRecipients = _feeRecipients;
+        nftContractAuctions[_nftContractAddress][_tokenId]
+        .feePercentages = _feePercentages;
         nftContractAuctions[_nftContractAddress][_tokenId].minPrice = _minPrice;
         nftContractAuctions[_nftContractAddress][_tokenId].nftSeller = msg
         .sender;
@@ -366,11 +434,20 @@ contract NFTAuction {
         address _nftContractAddress,
         uint256 _tokenId,
         address _erc20Token,
-        uint256 _minPrice
-    ) internal auctionMinPriceGreaterThanZero(_minPrice) {
+        uint256 _minPrice,
+        address[] memory _feeRecipients,
+        uint32[] memory _feePercentages
+    ) internal {
         // Sending our contract the NFT
         _transferNftMasterToAuctionContract(_nftContractAddress, _tokenId);
-        _setupAuction(_nftContractAddress, _tokenId, _erc20Token, _minPrice);
+        _setupAuction(
+            _nftContractAddress,
+            _tokenId,
+            _erc20Token,
+            _minPrice,
+            _feeRecipients,
+            _feePercentages
+        );
         if (_isMinimumBidMade(_nftContractAddress, _tokenId)) {
             _updateAuctionEnd(_nftContractAddress, _tokenId);
         }
@@ -384,13 +461,17 @@ contract NFTAuction {
         address _nftContractAddress,
         uint256 _tokenId,
         address _erc20Token,
-        uint256 _minPrice
+        uint256 _minPrice,
+        address[] memory _feeRecipients,
+        uint32[] memory _feePercentages
     ) external {
         _createNewNftAuction(
             _nftContractAddress,
             _tokenId,
             _erc20Token,
-            _minPrice
+            _minPrice,
+            _feeRecipients,
+            _feePercentages
         );
 
         emit DefaultNftAuctionCreated(_nftContractAddress, _tokenId, _minPrice);
@@ -402,12 +483,10 @@ contract NFTAuction {
         address _erc20Token,
         uint256 _minPrice,
         uint256 _auctionBidPeriod, //this is the time that the auction lasts until another bid occurs
-        uint256 _bidIncreasePercentage
-    ) external {
-        require(
-            _bidIncreasePercentage >= minimumSettableIncreasePercentage,
-            "Bid increase percentage must be greater than minimum settable increase percentage"
-        );
+        uint256 _bidIncreasePercentage,
+        address[] memory _feeRecipients,
+        uint32[] memory _feePercentages
+    ) external increasePercentageAboveMinimum(_bidIncreasePercentage) {
         nftContractAuctions[_nftContractAddress][_tokenId]
         .auctionBidPeriod = _auctionBidPeriod;
         nftContractAuctions[_nftContractAddress][_tokenId]
@@ -416,7 +495,9 @@ contract NFTAuction {
             _nftContractAddress,
             _tokenId,
             _erc20Token,
-            _minPrice
+            _minPrice,
+            _feeRecipients,
+            _feePercentages
         );
 
         emit NftAuctionCreated(
@@ -433,12 +514,10 @@ contract NFTAuction {
         uint256 _tokenIdMaster,
         address _erc20Token,
         uint256 _minPrice,
-        uint256[] memory _layers
-    )
-        internal
-        auctionMinPriceGreaterThanZero(_minPrice)
-        layersDoesNotExceedLimit(_layers.length)
-    {
+        uint256[] memory _layers,
+        address[] memory _feeRecipients,
+        uint32[] memory _feePercentages
+    ) internal layersDoesNotExceedLimit(_layers.length) {
         _transferNftMasterToAuctionContract(
             _nftContractAddress,
             _tokenIdMaster
@@ -452,7 +531,9 @@ contract NFTAuction {
             _nftContractAddress,
             _tokenIdMaster,
             _erc20Token,
-            _minPrice
+            _minPrice,
+            _feeRecipients,
+            _feePercentages
         );
         if (_isMinimumBidMade(_nftContractAddress, _tokenIdMaster)) {
             _updateAuctionEnd(_nftContractAddress, _tokenIdMaster);
@@ -464,14 +545,18 @@ contract NFTAuction {
         uint256 _tokenIdMaster,
         address _erc20Token,
         uint256 _minPrice,
-        uint256[] memory _layers
+        uint256[] memory _layers,
+        address[] memory _feeRecipients,
+        uint32[] memory _feePercentages
     ) external {
         _createBatchNftAuction(
             _nftContractAddress,
             _tokenIdMaster,
             _erc20Token,
             _minPrice,
-            _layers
+            _layers,
+            _feeRecipients,
+            _feePercentages
         );
     }
 
@@ -482,8 +567,10 @@ contract NFTAuction {
         uint256 _minPrice,
         uint256[] memory _layers,
         uint256 _auctionBidPeriod, //this is the time that the auction lasts until another bid occurs
-        uint256 _bidIncreasePercentage
-    ) external {
+        uint256 _bidIncreasePercentage,
+        address[] memory _feeRecipients,
+        uint32[] memory _feePercentages
+    ) external increasePercentageAboveMinimum(_bidIncreasePercentage) {
         nftContractAuctions[_nftContractAddress][_tokenIdMaster]
         .auctionBidPeriod = _auctionBidPeriod;
         nftContractAuctions[_nftContractAddress][_tokenIdMaster]
@@ -493,7 +580,9 @@ contract NFTAuction {
             _tokenIdMaster,
             _erc20Token,
             _minPrice,
-            _layers
+            _layers,
+            _feeRecipients,
+            _feePercentages
         );
     }
 
@@ -512,9 +601,18 @@ contract NFTAuction {
         uint256 _tokenId,
         address _erc20Token,
         uint256 _minPrice,
-        address _whiteListedBuyer
+        address _whiteListedBuyer,
+        address[] memory _feeRecipients,
+        uint32[] memory _feePercentages
     ) internal {
-        _setupAuction(_nftContractAddress, _tokenId, _erc20Token, _minPrice);
+        _setupAuction(
+            _nftContractAddress,
+            _tokenId,
+            _erc20Token,
+            _minPrice,
+            _feeRecipients,
+            _feePercentages
+        );
         nftContractAuctions[_nftContractAddress][_tokenId]
         .whiteListedBuyer = _whiteListedBuyer;
         //check if min bid made and conclude sale, or send money back to not whitelisted buyer
@@ -536,15 +634,19 @@ contract NFTAuction {
         uint256 _tokenId,
         address _erc20Token,
         uint256 _minPrice,
-        address _whiteListedBuyer
-    ) external auctionMinPriceGreaterThanZero(_minPrice) {
+        address _whiteListedBuyer,
+        address[] memory _feeRecipients,
+        uint32[] memory _feePercentages
+    ) external {
         _transferNftMasterToAuctionContract(_nftContractAddress, _tokenId);
         _updateWhitelistedSale(
             _nftContractAddress,
             _tokenId,
             _erc20Token,
             _minPrice,
-            _whiteListedBuyer
+            _whiteListedBuyer,
+            _feeRecipients,
+            _feePercentages
         );
 
         emit WhiteListSaleCreated(
@@ -561,12 +663,10 @@ contract NFTAuction {
         address _erc20Token,
         uint256 _minPrice,
         uint256[] memory _layers,
-        address _whiteListedBuyer
-    )
-        external
-        auctionMinPriceGreaterThanZero(_minPrice)
-        layersDoesNotExceedLimit(_layers.length)
-    {
+        address _whiteListedBuyer,
+        address[] memory _feeRecipients,
+        uint32[] memory _feePercentages
+    ) external layersDoesNotExceedLimit(_layers.length) {
         _transferNftMasterToAuctionContract(
             _nftContractAddress,
             _tokenIdMaster
@@ -581,7 +681,9 @@ contract NFTAuction {
             _tokenIdMaster,
             _erc20Token,
             _minPrice,
-            _whiteListedBuyer
+            _whiteListedBuyer,
+            _feeRecipients,
+            _feePercentages
         );
     }
 
@@ -820,11 +922,7 @@ contract NFTAuction {
         address _nftContractAddress,
         uint256 _tokenId
     ) internal {
-        _payoutHighestBid(
-            _nftContractAddress,
-            _tokenId,
-            nftContractAuctions[_nftContractAddress][_tokenId].nftSeller
-        );
+        _payFeesAndSeller(_nftContractAddress, _tokenId);
         address nftRecipient = _getNftRecipient(_nftContractAddress, _tokenId);
         _resetBids(_nftContractAddress, _tokenId);
         //reset bid and transfer nft last to avoid reentrancy
@@ -855,28 +953,70 @@ contract NFTAuction {
         _resetAuction(_nftContractAddress, _tokenId);
     }
 
+    function _payFeesAndSeller(address _nftContractAddress, uint256 _tokenId)
+        internal
+    {
+        uint256 paymentAmountTotal;
+        uint256 highestBid = nftContractAuctions[_nftContractAddress][_tokenId]
+        .nftHighestBid;
+        //payfees
+        for (
+            uint256 i = 0;
+            i <
+            nftContractAuctions[_nftContractAddress][_tokenId]
+            .feeRecipients
+            .length;
+            i++
+        ) {
+            uint256 paymentAmount = _getPaymentAmount(
+                highestBid,
+                nftContractAuctions[_nftContractAddress][_tokenId]
+                .feePercentages[i]
+            );
+            paymentAmountTotal = paymentAmountTotal + paymentAmount;
+            _payout(
+                _nftContractAddress,
+                _tokenId,
+                nftContractAuctions[_nftContractAddress][_tokenId]
+                    .feeRecipients[i],
+                paymentAmount
+            );
+        }
+        _payout(
+            _nftContractAddress,
+            _tokenId,
+            nftContractAuctions[_nftContractAddress][_tokenId].nftSeller,
+            (highestBid - paymentAmountTotal)
+        );
+    }
+
     function _payoutHighestBid(
         address _nftContractAddress,
         uint256 _tokenId,
         address _recipient
     ) internal {
+        _payout(
+            _nftContractAddress,
+            _tokenId,
+            _recipient,
+            nftContractAuctions[_nftContractAddress][_tokenId].nftHighestBid
+        );
+    }
+
+    function _payout(
+        address _nftContractAddress,
+        uint256 _tokenId,
+        address _recipient,
+        uint256 _amount
+    ) internal {
         if (_isERC20Auction(_nftContractAddress, _tokenId)) {
             IERC20 erc20Token = IERC20(
                 nftContractAuctions[_nftContractAddress][_tokenId].ERC20Token
             );
-            erc20Token.approve(
-                address(this),
-                nftContractAuctions[_nftContractAddress][_tokenId].nftHighestBid
-            );
-            erc20Token.safeTransferFrom(
-                address(this),
-                _recipient,
-                nftContractAuctions[_nftContractAddress][_tokenId].nftHighestBid
-            );
+            erc20Token.approve(address(this), _amount);
+            erc20Token.safeTransferFrom(address(this), _recipient, _amount);
         } else {
-            payable(_recipient).transfer(
-                nftContractAuctions[_nftContractAddress][_tokenId].nftHighestBid
-            );
+            payable(_recipient).transfer(_amount);
         }
     }
 
@@ -885,11 +1025,8 @@ contract NFTAuction {
       ╚══════════════════════════════╝*/
     function settleAuction(address _nftContractAddress, uint256 _tokenId)
         external
+        isAuctionOver(_nftContractAddress, _tokenId)
     {
-        require(
-            !_isAuctionOngoing(_nftContractAddress, _tokenId),
-            "Auction is not yet over"
-        );
         _transferNftAndPaySeller(_nftContractAddress, _tokenId);
         emit AuctionSettled(_nftContractAddress, _tokenId);
     }

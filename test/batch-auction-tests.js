@@ -11,6 +11,8 @@ const auctionBidPeriod = 106400; //seconds
 const layers = [2, 3, 4, 5, 6, 7, 8, 9, 10];
 const zeroAddress = "0x0000000000000000000000000000000000000000";
 const zeroERC20Tokens = 0;
+const emptyFeeRecipients = [];
+const emptyFeePercentages = [];
 
 // Deploy and create a mock erc721 contract.
 // Test end to end auction
@@ -53,7 +55,9 @@ describe("Batch Auction", function () {
         tokenIdMaster,
         zeroAddress,
         minPrice,
-        layers
+        layers,
+        emptyFeeRecipients,
+        emptyFeePercentages
       );
     expect(await erc721.ownerOf(tokenIdMaster)).to.equal(nftAuction.address);
     for (let i = 0; i < layers.length; i++) {
@@ -69,7 +73,9 @@ describe("Batch Auction", function () {
           tokenIdMaster,
           zeroAddress,
           0,
-          layers
+          layers,
+          emptyFeeRecipients,
+          emptyFeePercentages
         )
     ).to.be.revertedWith("Minimum price cannot be 0");
   });
@@ -105,7 +111,9 @@ describe("Batch Auction", function () {
             tokenIdMaster,
             zeroAddress,
             minPrice,
-            maxLayers
+            maxLayers,
+            emptyFeeRecipients,
+            emptyFeePercentages
           )
       ).to.be.revertedWith("Too many NFTs sent");
     });
@@ -119,7 +127,9 @@ describe("Batch Auction", function () {
           tokenIdMaster,
           zeroAddress,
           minPrice,
-          layers
+          layers,
+          emptyFeeRecipients,
+          emptyFeePercentages
         );
     });
     it("should allow seller to withdraw NFTs if no bids made", async function () {
@@ -142,6 +152,7 @@ describe("Batch Auction", function () {
       expect(result.minPrice.toString()).to.be.equal(
         BigNumber.from(0).toString()
       );
+      expect(result.nftSeller).to.be.equal(zeroAddress);
     });
     it("should allow bids on batch auction", async function () {
       await nftAuction
@@ -187,7 +198,7 @@ describe("Batch Auction", function () {
    */
   describe(" Custom Batch Auction Bids and settlement tests", async function () {
     beforeEach(async function () {
-      bidIncreasePercentage = 15;
+      bidIncreasePercentage = 1500;
       await nftAuction
         .connect(user1)
         .createBatchNftAuction(
@@ -197,7 +208,9 @@ describe("Batch Auction", function () {
           minPrice,
           layers,
           auctionBidPeriod,
-          bidIncreasePercentage
+          bidIncreasePercentage,
+          emptyFeeRecipients,
+          emptyFeePercentages
         );
     });
     it("should allow seller to withdraw NFTs if no bids made", async function () {
@@ -220,6 +233,7 @@ describe("Batch Auction", function () {
       expect(result.minPrice.toString()).to.be.equal(
         BigNumber.from(0).toString()
       );
+      expect(result.nftSeller).to.be.equal(zeroAddress);
     });
     it("should allow bids on batch auction", async function () {
       await nftAuction
@@ -258,6 +272,11 @@ describe("Batch Auction", function () {
       for (let i = 0; i < layers.length; i++) {
         expect(await erc721.ownerOf(layers[i])).to.equal(user2.address);
       }
+      result = await nftAuction.nftContractAuctions(
+        erc721.address,
+        tokenIdMaster
+      );
+      expect(result.nftSeller).to.be.equal(zeroAddress);
     });
   });
 
@@ -277,7 +296,9 @@ describe("Batch Auction", function () {
           tokenIdMaster,
           zeroAddress,
           minPrice,
-          layers
+          layers,
+          emptyFeeRecipients,
+          emptyFeePercentages
         );
       expect(await erc721.ownerOf(tokenIdMaster)).to.equal(nftAuction.address);
       for (let i = 0; i < layers.length; i++) {
@@ -292,7 +313,9 @@ describe("Batch Auction", function () {
           tokenIdMaster,
           zeroAddress,
           minPrice,
-          layers
+          layers,
+          emptyFeeRecipients,
+          emptyFeePercentages
         );
       let result = await nftAuction.nftContractAuctions(
         erc721.address,

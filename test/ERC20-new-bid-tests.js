@@ -10,9 +10,11 @@ const newMinPrice = 50;
 const tokenBidAmount = 250;
 const tokenAmount = 500;
 const auctionBidPeriod = 86400; //seconds
-const bidIncreasePercentage = 10;
+const bidIncreasePercentage = 1000;
 const zeroAddress = "0x0000000000000000000000000000000000000000";
 const zeroERC20Tokens = 0;
+const emptyFeeRecipients = [];
+const emptyFeePercentages = [];
 
 // Deploy and create a mock erc721 contract.
 
@@ -70,7 +72,9 @@ describe("ERC20 New Bid Tests", function () {
           erc20.address,
           minPrice,
           auctionBidPeriod,
-          bidIncreasePercentage
+          bidIncreasePercentage,
+          emptyFeeRecipients,
+          emptyFeePercentages
         );
     });
     // 1 basic test, NFT put up for auction can accept bids with ETH
@@ -117,7 +121,7 @@ describe("ERC20 New Bid Tests", function () {
             erc721.address,
             tokenId,
             erc20.address,
-            (minPrice * 101) / 100
+            (minPrice * 10100) / 10000
           )
       ).to.be.revertedWith("Bid must be % more than previous highest bid");
     });
@@ -127,7 +131,7 @@ describe("ERC20 New Bid Tests", function () {
         .connect(user2)
         .makeBid(erc721.address, tokenId, erc20.address, minPrice);
       const bidIncreaseByMinPercentage =
-        (minPrice * (100 + bidIncreasePercentage)) / 100;
+        (minPrice * (10000 + bidIncreasePercentage)) / 10000;
       await nftAuction
         .connect(user3)
         .makeBid(
@@ -224,7 +228,9 @@ describe("ERC20 New Bid Tests", function () {
           erc20.address,
           minPrice,
           auctionBidPeriod,
-          bidIncreasePercentage
+          bidIncreasePercentage,
+          emptyFeeRecipients,
+          emptyFeePercentages
         );
       await nftAuction
         .connect(user2)
