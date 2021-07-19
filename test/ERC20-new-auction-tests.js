@@ -6,10 +6,12 @@ const tokenId = 1;
 const minPrice = 100;
 const newMinPrice = 50;
 const auctionBidPeriod = 86400; //seconds
-const bidIncreasePercentage = 10;
+const bidIncreasePercentage = 1000;
 const tokenAmount = 500;
 const zeroAddress = "0x0000000000000000000000000000000000000000";
 const zeroERC20Tokens = 0;
+const emptyFeeRecipients = [];
+const emptyFeePercentages = [];
 // Deploy and create a mock erc721 contract.
 // 1 basic test, NFT sent from one person to another works correctly.
 describe("ERC20 New Auction Tests", function () {
@@ -63,7 +65,9 @@ describe("ERC20 New Auction Tests", function () {
         erc20.address,
         minPrice,
         auctionBidPeriod,
-        bidIncreasePercentage
+        bidIncreasePercentage,
+        emptyFeeRecipients,
+        emptyFeePercentages
       );
 
     expect(await erc721.ownerOf(tokenId)).to.equal(nftAuction.address);
@@ -79,7 +83,9 @@ describe("ERC20 New Auction Tests", function () {
           erc20.address,
           minPrice,
           auctionBidPeriod,
-          4
+          400,
+          emptyFeeRecipients,
+          emptyFeePercentages
         )
     ).to.be.revertedWith(
       "Bid increase percentage must be greater than minimum settable increase percentage"
@@ -96,7 +102,9 @@ describe("ERC20 New Auction Tests", function () {
           erc20.address,
           0,
           auctionBidPeriod,
-          bidIncreasePercentage
+          bidIncreasePercentage,
+          emptyFeeRecipients,
+          emptyFeePercentages
         )
     ).to.be.revertedWith("Minimum price cannot be 0");
   });
@@ -108,7 +116,9 @@ describe("ERC20 New Auction Tests", function () {
         erc721.address,
         tokenId,
         erc20.address,
-        minPrice
+        minPrice,
+        emptyFeeRecipients,
+        emptyFeePercentages
       );
 
     expect(await erc721.ownerOf(tokenId)).to.equal(nftAuction.address);
@@ -122,7 +132,9 @@ describe("ERC20 New Auction Tests", function () {
           erc721.address,
           tokenId,
           erc20.address,
-          minPrice
+          minPrice,
+          emptyFeeRecipients,
+          emptyFeePercentages
         );
     });
     it("should allow seller to withdraw NFT if no bids made", async function () {

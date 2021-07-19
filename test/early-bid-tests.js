@@ -11,6 +11,8 @@ const auctionBidPeriod = 86400; //seconds
 const bidIncreasePercentage = 10;
 const zeroAddress = "0x0000000000000000000000000000000000000000";
 const zeroERC20Tokens = 0;
+const emptyFeeRecipients = [];
+const emptyFeePercentages = [];
 
 // Deploy and create a mock erc721 contract.
 
@@ -55,7 +57,14 @@ describe("Early bid tests", function () {
   it("should allow NFT owner to create auction", async function () {
     await nftAuction
       .connect(user1)
-      .createDefaultNftAuction(erc721.address, tokenId, zeroAddress, minPrice);
+      .createDefaultNftAuction(
+        erc721.address,
+        tokenId,
+        zeroAddress,
+        minPrice,
+        emptyFeeRecipients,
+        emptyFeePercentages
+      );
 
     let result = await nftAuction.nftContractAuctions(erc721.address, tokenId);
     expect(result.minPrice).to.equal(BigNumber.from(minPrice).toString());
@@ -63,7 +72,14 @@ describe("Early bid tests", function () {
   it("should start auction period if early bid is higher than minimum", async function () {
     await nftAuction
       .connect(user1)
-      .createDefaultNftAuction(erc721.address, tokenId, zeroAddress, minPrice);
+      .createDefaultNftAuction(
+        erc721.address,
+        tokenId,
+        zeroAddress,
+        minPrice,
+        emptyFeeRecipients,
+        emptyFeePercentages
+      );
 
     let result = await nftAuction.nftContractAuctions(erc721.address, tokenId);
     expect(result.auctionEnd).to.be.not.equal(BigNumber.from(0).toString());
@@ -75,7 +91,9 @@ describe("Early bid tests", function () {
         erc721.address,
         tokenId,
         zeroAddress,
-        minPrice - 1
+        minPrice - 1,
+        emptyFeeRecipients,
+        emptyFeePercentages
       );
 
     let result = await nftAuction.nftContractAuctions(erc721.address, tokenId);

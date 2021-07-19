@@ -13,6 +13,8 @@ const auctionBidPeriod = 106400; //seconds
 const layers = [2, 3, 4, 5, 6, 7, 8, 9, 10];
 const zeroAddress = "0x0000000000000000000000000000000000000000";
 const zeroERC20Tokens = 0;
+const emptyFeeRecipients = [];
+const emptyFeePercentages = [];
 
 // Deploy and create a mock erc721 contract.
 // Test end to end auction
@@ -71,7 +73,9 @@ describe("Batch Whitelist Sales with ERC20 Tokens", function () {
         erc20.address,
         minPrice,
         layers,
-        user2.address
+        user2.address,
+        emptyFeeRecipients,
+        emptyFeePercentages
       );
     expect(await erc721.ownerOf(tokenIdMaster)).to.equal(nftAuction.address);
     for (let i = 0; i < layers.length; i++) {
@@ -88,7 +92,9 @@ describe("Batch Whitelist Sales with ERC20 Tokens", function () {
           erc20.address,
           0,
           layers,
-          user2.address
+          user2.address,
+          emptyFeeRecipients,
+          emptyFeePercentages
         )
     ).to.be.revertedWith("Minimum price cannot be 0");
   });
@@ -102,7 +108,9 @@ describe("Batch Whitelist Sales with ERC20 Tokens", function () {
           erc20.address,
           minPrice,
           layers,
-          user2.address
+          user2.address,
+          emptyFeeRecipients,
+          emptyFeePercentages
         );
     });
     it("should allow seller to withdraw NFTs if no bids made", async function () {

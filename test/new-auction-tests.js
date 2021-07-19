@@ -6,8 +6,10 @@ const tokenId = 1;
 const minPrice = 100;
 const newMinPrice = 50;
 const auctionBidPeriod = 86400; //seconds
-const bidIncreasePercentage = 10;
+const bidIncreasePercentage = 1000;
 const zeroAddress = "0x0000000000000000000000000000000000000000";
+const emptyFeeRecipients = [];
+const emptyFeePercentages = [];
 // Deploy and create a mock erc721 contract.
 // 1 basic test, NFT sent from one person to another works correctly.
 describe("NFTAuction", function () {
@@ -19,15 +21,21 @@ describe("NFTAuction", function () {
   let user1;
   let user2;
   let user3;
+  let testArtist;
+  let testPlatform;
+  let feeRecipients;
+  let feePercentages;
 
   beforeEach(async function () {
     ERC721 = await ethers.getContractFactory("ERC721MockContract");
     NFTAuction = await ethers.getContractFactory("NFTAuction");
-    [ContractOwner, user1, user2, user3] = await ethers.getSigners();
+    [ContractOwner, user1, user2, user3, testArtist, testPlatform] =
+      await ethers.getSigners();
     erc721 = await ERC721.deploy("my mockables", "MBA");
     await erc721.deployed();
     await erc721.mint(user1.address, tokenId);
-
+    feeRecipients = [testArtist.address, testPlatform.address];
+    feePercentages = [1000, 100];
     nftAuction = await NFTAuction.deploy();
     await nftAuction.deployed();
     //approve our smart contract to transfer this NFT
@@ -47,7 +55,9 @@ describe("NFTAuction", function () {
         zeroAddress,
         minPrice,
         auctionBidPeriod,
-        bidIncreasePercentage
+        bidIncreasePercentage,
+        emptyFeeRecipients,
+        emptyFeePercentages
       );
 
     expect(await erc721.ownerOf(tokenId)).to.equal(nftAuction.address);
@@ -69,7 +79,9 @@ describe("NFTAuction", function () {
           zeroAddress,
           minPrice,
           auctionBidPeriod,
-          4
+          4,
+          emptyFeeRecipients,
+          emptyFeePercentages
         )
     ).to.be.revertedWith(
       "Bid increase percentage must be greater than minimum settable increase percentage"
@@ -86,7 +98,9 @@ describe("NFTAuction", function () {
           zeroAddress,
           0,
           auctionBidPeriod,
-          bidIncreasePercentage
+          bidIncreasePercentage,
+          emptyFeeRecipients,
+          emptyFeePercentages
         )
     ).to.be.revertedWith("Minimum price cannot be 0");
   });
@@ -94,9 +108,59 @@ describe("NFTAuction", function () {
   it("should allow seller to create default Auction", async function () {
     await nftAuction
       .connect(user1)
-      .createDefaultNftAuction(erc721.address, tokenId, zeroAddress, minPrice);
+      .createDefaultNftAuction(
+        erc721.address,
+        tokenId,
+        zeroAddress,
+        minPrice,
+        emptyFeeRecipients,
+        emptyFeePercentages
+      );
 
     expect(await erc721.ownerOf(tokenId)).to.equal(nftAuction.address);
+  });
+  it("shoulld allow seller to specify fees", async function () {
+    await nftAuction
+      .connect(user1)
+      .createDefaultNftAuction(
+        erc721.address,
+        tokenId,
+        zeroAddress,
+        minPrice,
+        feeRecipients,
+        feePercentages
+      );
+    expect(await erc721.ownerOf(tokenId)).to.equal(nftAuction.address);
+  });
+  it("shoulld revert if fees exceed 100%", async function () {
+    feePercentages = [9900, 1200]; // max = 10000
+    await expect(
+      nftAuction
+        .connect(user1)
+        .createDefaultNftAuction(
+          erc721.address,
+          tokenId,
+          zeroAddress,
+          minPrice,
+          feeRecipients,
+          feePercentages
+        )
+    ).to.be.revertedWith("fee percentages exceed maximum");
+  });
+  it("shoulld revert if recipients and percentages do not align", async function () {
+    feePercentages = [1000];
+    await expect(
+      nftAuction
+        .connect(user1)
+        .createDefaultNftAuction(
+          erc721.address,
+          tokenId,
+          zeroAddress,
+          minPrice,
+          feeRecipients,
+          feePercentages
+        )
+    ).to.be.revertedWith("mismatched fee recipients and percentages");
   });
 
   describe("Test when no bids made on new auction", function () {
@@ -107,7 +171,9 @@ describe("NFTAuction", function () {
           erc721.address,
           tokenId,
           zeroAddress,
-          minPrice
+          minPrice,
+          emptyFeeRecipients,
+          emptyFeePercentages
         );
     });
     it("should allow seller to withdraw NFT if no bids made", async function () {

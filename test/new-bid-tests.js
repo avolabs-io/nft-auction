@@ -8,9 +8,11 @@ const tokenId = 1;
 const minPrice = 100;
 const newMinPrice = 50;
 const auctionBidPeriod = 86400; //seconds
-const bidIncreasePercentage = 10;
+const bidIncreasePercentage = 1000;
 const zeroAddress = "0x0000000000000000000000000000000000000000";
 const zeroERC20Tokens = 0;
+const emptyFeeRecipients = [];
+const emptyFeePercentages = [];
 
 // Deploy and create a mock erc721 contract.
 
@@ -49,7 +51,9 @@ describe("NFTAuction Bids", function () {
           zeroAddress,
           minPrice,
           auctionBidPeriod,
-          bidIncreasePercentage
+          bidIncreasePercentage,
+          emptyFeeRecipients,
+          emptyFeePercentages
         );
     });
     // 1 basic test, NFT put up for auction can accept bids with ETH
@@ -88,7 +92,7 @@ describe("NFTAuction Bids", function () {
         nftAuction
           .connect(user3)
           .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
-            value: (minPrice * 101) / 100,
+            value: (minPrice * 10100) / 10000,
           })
       ).to.be.revertedWith("Bid must be % more than previous highest bid");
     });
@@ -100,7 +104,7 @@ describe("NFTAuction Bids", function () {
           value: minPrice,
         });
       const bidIncreaseByMinPercentage =
-        (minPrice * (100 + bidIncreasePercentage)) / 100;
+        (minPrice * (10000 + bidIncreasePercentage)) / 10000;
       await nftAuction
         .connect(user3)
         .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
@@ -179,7 +183,7 @@ describe("NFTAuction Bids", function () {
   describe("Test underbid functionality", function () {
     let underBid = minPrice - 10;
     let result;
-    let user1BalanceBeforePayout;
+    let user2BalanceBeforePayout;
     beforeEach(async function () {
       await nftAuction
         .connect(user1)
@@ -189,7 +193,9 @@ describe("NFTAuction Bids", function () {
           zeroAddress,
           minPrice,
           auctionBidPeriod,
-          bidIncreasePercentage
+          bidIncreasePercentage,
+          emptyFeeRecipients,
+          emptyFeePercentages
         );
       await nftAuction
         .connect(user2)
@@ -197,7 +203,7 @@ describe("NFTAuction Bids", function () {
           value: underBid,
         });
       result = await nftAuction.nftContractAuctions(erc721.address, tokenId);
-      user1BalanceBeforePayout = await user2.getBalance();
+      user2BalanceBeforePayout = await user2.getBalance();
     });
     it("should allow underbidding", async function () {
       expect(result.nftHighestBidder).to.be.equal(user2.address);
@@ -229,7 +235,7 @@ describe("NFTAuction Bids", function () {
       const gasUsedBN = BigNumber.from(gasUsed);
       const gasCost = BigNumber.from(gasPrice).mul(gasUsedBN);
 
-      const balBefore = BigNumber.from(user1BalanceBeforePayout);
+      const balBefore = BigNumber.from(user2BalanceBeforePayout);
       const amount = BigNumber.from(underBid);
       // multiply gas cost by gas used
       const expectedBalanceAfterPayout = balBefore.add(amount).sub(gasCost);
