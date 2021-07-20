@@ -205,6 +205,12 @@ contract NFTAuction {
         _;
     }
 
+    /**********************************/
+    /*╔═════════════════════════════╗
+      ║             END             ║
+      ║          MODIFIERS          ║
+      ╚═════════════════════════════╝*/
+    /**********************************/
     // constructor
     constructor() {
         defaultBidIncreasePercentage = 10;
@@ -306,6 +312,12 @@ contract NFTAuction {
         return (_totalBid * (_percentage)) / 10000;
     }
 
+    /**********************************/
+    /*╔══════════════════════════════╗
+      ║             END              ║
+      ║    AUCTION CHECK FUNCTIONS   ║
+      ╚══════════════════════════════╝*/
+    /**********************************/
     /*╔══════════════════════════════╗
       ║    DEFAULT GETTER FUNCTIONS  ║
       ╚══════════════════════════════╝*/
@@ -360,6 +372,13 @@ contract NFTAuction {
         }
     }
 
+    /**********************************/
+    /*╔══════════════════════════════╗
+      ║             END              ║
+      ║    DEFAULT GETTER FUNCTIONS  ║
+      ╚══════════════════════════════╝*/
+    /**********************************/
+
     /*╔══════════════════════════════╗
       ║  TRANSFER NFTS TO CONTRACT   ║
       ╚══════════════════════════════╝*/
@@ -390,6 +409,13 @@ contract NFTAuction {
         nftContractAuctions[_nftContractAddress][_tokenIdMaster]
         .layers = _layers;
     }
+
+    /**********************************/
+    /*╔══════════════════════════════╗
+      ║             END              ║
+      ║  TRANSFER NFTS TO CONTRACT   ║
+      ╚══════════════════════════════╝*/
+    /**********************************/
 
     /*╔══════════════════════════════╗
       ║       AUCTION CREATION       ║
@@ -586,6 +612,13 @@ contract NFTAuction {
         );
     }
 
+    /**********************************/
+    /*╔══════════════════════════════╗
+      ║             END              ║
+      ║       AUCTION CREATION       ║
+      ╚══════════════════════════════╝*/
+    /**********************************/
+
     /*╔══════════════════════════════╗
       ║       WHITELIST SALES        ║
       ╚══════════════════════════════╝*/
@@ -687,6 +720,13 @@ contract NFTAuction {
         );
     }
 
+    /**********************************/
+    /*╔══════════════════════════════╗
+      ║             END              ║
+      ║       WHITELIST SALES        ║
+      ╚══════════════════════════════╝*/
+    /**********************************/
+
     /*╔═════════════════════════════╗
       ║        BID FUNCTIONS        ║
       ╚═════════════════════════════╝*/
@@ -757,9 +797,21 @@ contract NFTAuction {
         }
     }
 
+    /**********************************/
+    /*╔══════════════════════════════╗
+      ║             END              ║
+      ║        BID FUNCTIONS         ║
+      ╚══════════════════════════════╝*/
+    /**********************************/
+
     /*╔══════════════════════════════╗
       ║       UPDATE AUCTION         ║
       ╚══════════════════════════════╝*/
+
+    /***********************************************************************
+     * Update an ongoing auction by updating the highest bid and bidder and*
+     * update auction period to begin if the minimum price has been met.   *
+     ***********************************************************************/
     function _updateOngoingAuction(
         address _nftContractAddress,
         uint256 _tokenId,
@@ -785,9 +837,21 @@ contract NFTAuction {
             block.timestamp;
     }
 
+    /**********************************/
+    /*╔══════════════════════════════╗
+      ║             END              ║
+      ║       UPDATE AUCTION         ║
+      ╚══════════════════════════════╝*/
+    /**********************************/
+
     /*╔══════════════════════════════╗
       ║       RESET FUNCTIONS        ║
       ╚══════════════════════════════╝*/
+
+    /*
+     * Reset all auction related parameters for an NFT.
+     * This effectively removes an EFT as an item up for auction
+     */
     function _resetAuction(address _nftContractAddress, uint256 _tokenId)
         internal
     {
@@ -807,6 +871,10 @@ contract NFTAuction {
         );
     }
 
+    /*
+     * Reset all bid related parameters for an NFT.
+     * This effectively sets an NFT as having no active bids
+     */
     function _resetBids(address _nftContractAddress, uint256 _tokenId)
         internal
     {
@@ -817,9 +885,20 @@ contract NFTAuction {
         .nftRecipient = address(0);
     }
 
+    /**********************************/
+    /*╔══════════════════════════════╗
+      ║             END              ║
+      ║       RESET FUNCTIONS        ║
+      ╚══════════════════════════════╝*/
+    /**********************************/
+
     /*╔══════════════════════════════╗
       ║         UPDATE BIDS          ║
       ╚══════════════════════════════╝*/
+    /******************************************************************
+     * Internal functions that update bid parameters and reverse bids *
+     * to ensure contract only holds the highest bid.                 *
+     ******************************************************************/
     function _updateHighestBid(
         address _nftContractAddress,
         uint256 _tokenId,
@@ -877,6 +956,13 @@ contract NFTAuction {
         _transferNftAndPaySeller(_nftContractAddress, _tokenId);
     }
 
+    /**********************************/
+    /*╔══════════════════════════════╗
+      ║             END              ║
+      ║         UPDATE BIDS          ║
+      ╚══════════════════════════════╝*/
+    /**********************************/
+
     /*╔══════════════════════════════╗
       ║   CONCLUDE WHITELIST SALE    ║
       ╚══════════════════════════════╝*/
@@ -914,6 +1000,13 @@ contract NFTAuction {
             _tokenAmount
         );
     }
+
+    /**********************************/
+    /*╔══════════════════════════════╗
+      ║             END              ║
+      ║   CONCLUDE WHITELIST SALE    ║
+      ╚══════════════════════════════╝*/
+    /**********************************/
 
     /*╔══════════════════════════════╗
       ║  TRANSFER NFT & PAY SELLER   ║
@@ -1020,6 +1113,13 @@ contract NFTAuction {
         }
     }
 
+    /**********************************/
+    /*╔══════════════════════════════╗
+      ║             END              ║
+      ║  TRANSFER NFT & PAY SELLER   ║
+      ╚══════════════════════════════╝*/
+    /**********************************/
+
     /*╔══════════════════════════════╗
       ║      SETTLE & WITHDRAW       ║
       ╚══════════════════════════════╝*/
@@ -1082,6 +1182,13 @@ contract NFTAuction {
         _resetBids(_nftContractAddress, _tokenId);
     }
 
+    /**********************************/
+    /*╔══════════════════════════════╗
+      ║             END              ║
+      ║      SETTLE & WITHDRAW       ║
+      ╚══════════════════════════════╝*/
+    /**********************************/
+
     /*╔══════════════════════════════╗
       ║       UPDATE AUCTION         ║
       ╚══════════════════════════════╝*/
@@ -1113,4 +1220,10 @@ contract NFTAuction {
             _updateAuctionEnd(_nftContractAddress, _tokenId);
         }
     }
+    /**********************************/
+    /*╔══════════════════════════════╗
+      ║             END              ║
+      ║       UPDATE AUCTION         ║
+      ╚══════════════════════════════╝*/
+    /**********************************/
 }
