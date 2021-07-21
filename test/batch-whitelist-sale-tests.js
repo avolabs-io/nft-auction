@@ -5,8 +5,8 @@ const { network } = require("hardhat");
 
 const tokenIdMaster = 1;
 const layers = [2, 3, 4, 5, 6, 7, 8, 9, 10];
-const minPrice = 10000;
 const newPrice = 15000;
+const buyNowPrice = 10000;
 const auctionBidPeriod = 86400; //seconds
 const zeroAddress = "0x0000000000000000000000000000000000000000";
 const zeroERC20Tokens = 0;
@@ -47,11 +47,11 @@ describe("Batch Whitelist Sale", function () {
   it("should allow batch whitelist sales", async function () {
     await nftAuction
       .connect(user1)
-      .createBatchWhiteListSale(
+      .createBatchSale(
         erc721.address,
         tokenIdMaster,
         zeroAddress,
-        minPrice,
+        buyNowPrice,
         layers,
         user2.address,
         emptyFeeRecipients,
@@ -66,7 +66,7 @@ describe("Batch Whitelist Sale", function () {
     await expect(
       nftAuction
         .connect(user1)
-        .createBatchWhiteListSale(
+        .createBatchSale(
           erc721.address,
           tokenIdMaster,
           zeroAddress,
@@ -76,17 +76,17 @@ describe("Batch Whitelist Sale", function () {
           emptyFeeRecipients,
           emptyFeePercentages
         )
-    ).to.be.revertedWith("Minimum price cannot be 0");
+    ).to.be.revertedWith("Price cannot be 0");
   });
   describe("Batch whitelist sale and settlement tests", async function () {
     beforeEach(async function () {
       await nftAuction
         .connect(user1)
-        .createBatchWhiteListSale(
+        .createBatchSale(
           erc721.address,
           tokenIdMaster,
           zeroAddress,
-          minPrice,
+          buyNowPrice,
           layers,
           user2.address,
           emptyFeeRecipients,
@@ -110,7 +110,7 @@ describe("Batch Whitelist Sale", function () {
         erc721.address,
         tokenIdMaster
       );
-      expect(result.minPrice.toString()).to.be.equal(
+      expect(result.buyNowPrice.toString()).to.be.equal(
         BigNumber.from(0).toString()
       );
     });
@@ -118,7 +118,7 @@ describe("Batch Whitelist Sale", function () {
       await nftAuction
         .connect(user2)
         .makeBid(erc721.address, tokenIdMaster, zeroAddress, zeroERC20Tokens, {
-          value: minPrice,
+          value: buyNowPrice,
         });
       let result = await nftAuction.nftContractAuctions(
         erc721.address,
@@ -133,13 +133,13 @@ describe("Batch Whitelist Sale", function () {
       await nftAuction
         .connect(user2)
         .makeBid(erc721.address, tokenIdMaster, zeroAddress, zeroERC20Tokens, {
-          value: minPrice,
+          value: buyNowPrice,
         });
       let result = await nftAuction.nftContractAuctions(
         erc721.address,
         tokenIdMaster
       );
-      expect(result.minPrice.toString()).to.be.equal(
+      expect(result.buyNowPrice.toString()).to.be.equal(
         BigNumber.from(0).toString()
       );
       expect(result.nftHighestBid.toString()).to.be.equal(
@@ -156,7 +156,7 @@ describe("Batch Whitelist Sale", function () {
           zeroERC20Tokens,
           user3.address,
           {
-            value: minPrice,
+            value: buyNowPrice,
           }
         );
       expect(await erc721.ownerOf(tokenIdMaster)).to.equal(user3.address);
@@ -174,26 +174,27 @@ describe("Batch Whitelist Sale", function () {
             zeroAddress,
             zeroERC20Tokens,
             {
-              value: minPrice,
+              value: buyNowPrice,
             }
           )
       ).to.be.revertedWith("only the whitelisted buyer can bid on this NFT");
       expect(await erc721.ownerOf(tokenIdMaster)).to.equal(nftAuction.address);
     });
-    it("should revert whitelist buyer below sale price", async function () {
-      await expect(
-        nftAuction
-          .connect(user2)
-          .makeBid(
-            erc721.address,
-            tokenIdMaster,
-            zeroAddress,
-            zeroERC20Tokens,
-            {
-              value: minPrice - 1,
-            }
-          )
-      ).to.be.revertedWith("Bid must be higher than minimum bid");
+    it("should allow whitelist buyer to bid below sale price", async function () {
+      await nftAuction
+        .connect(user2)
+        .makeBid(erc721.address, tokenIdMaster, zeroAddress, zeroERC20Tokens, {
+          value: buyNowPrice - 1,
+        });
+      let result = await nftAuction.nftContractAuctions(
+        erc721.address,
+        tokenIdMaster
+      );
+      expect(result.buyNowPrice).to.be.not.equal(BigNumber.from(0).toString());
+      expect(result.nftHighestBid.toString()).to.be.equal(
+        BigNumber.from(buyNowPrice - 1).toString()
+      );
+      expect(result.nftHighestBidder).to.be.equal(user2.address);
     });
     it("should allow seller to update whitelisted buyer", async function () {
       await nftAuction
@@ -208,14 +209,14 @@ describe("Batch Whitelist Sale", function () {
             zeroAddress,
             zeroERC20Tokens,
             {
-              value: minPrice,
+              value: buyNowPrice,
             }
           )
       ).to.be.revertedWith("only the whitelisted buyer can bid on this NFT");
       await nftAuction
         .connect(user3)
         .makeBid(erc721.address, tokenIdMaster, zeroAddress, zeroERC20Tokens, {
-          value: minPrice,
+          value: buyNowPrice,
         });
       expect(await erc721.ownerOf(tokenIdMaster)).to.equal(user3.address);
       for (let i = 0; i < layers.length; i++) {
@@ -223,6 +224,28 @@ describe("Batch Whitelist Sale", function () {
       }
       expect(await erc721.ownerOf(tokenIdMaster)).to.equal(user3.address);
     });
+    it("should revert underbid if different whitelist buyer set", async function () {
+      await nftAuction
+        .connect(user2)
+        .makeBid(erc721.address, tokenIdMaster, zeroAddress, zeroERC20Tokens, {
+          value: buyNowPrice - 100,
+        });
+      await nftAuction
+        .connect(user1)
+        .updateWhitelistedBuyer(erc721.address, tokenIdMaster, user3.address);
+      expect(await erc721.ownerOf(tokenIdMaster)).to.equal(nftAuction.address);
+      let result = await nftAuction.nftContractAuctions(
+        erc721.address,
+        tokenIdMaster
+      );
+
+      expect(result.buyNowPrice).to.be.not.equal(BigNumber.from(0).toString());
+      expect(result.nftHighestBid.toString()).to.be.equal(
+        BigNumber.from(0).toString()
+      );
+      expect(result.nftHighestBidder).to.be.equal(zeroAddress);
+    });
+
     it("should not allow other users to update whitelisted buyer", async function () {
       await expect(
         nftAuction
@@ -230,12 +253,20 @@ describe("Batch Whitelist Sale", function () {
           .updateWhitelistedBuyer(erc721.address, tokenIdMaster, user3.address)
       ).to.be.revertedWith("Only the owner can call this function");
     });
+    it("should not allow user to update min price for a sale", async function () {
+      let newMinPrice = 15000;
+      await expect(
+        nftAuction
+          .connect(user1)
+          .updateMinimumPrice(erc721.address, tokenIdMaster, newMinPrice)
+      ).to.be.revertedWith("cannot set minPrice of a sale");
+    });
   });
   /*
    ****Test Early Bid function on batch whitelisted sales****
    */
-  describe("Test early bids with batch auctions", async function () {
-    let underBid = minPrice - 1000;
+  describe("Test early bids with batch whitelist sales", async function () {
+    let underBid = buyNowPrice - 1000;
     let result;
     this.beforeEach(async function () {
       await nftAuction
@@ -248,15 +279,15 @@ describe("Batch Whitelist Sale", function () {
       await nftAuction
         .connect(user3)
         .makeBid(erc721.address, tokenIdMaster, zeroAddress, zeroERC20Tokens, {
-          value: minPrice,
+          value: buyNowPrice,
         });
       await nftAuction
         .connect(user1)
-        .createBatchWhiteListSale(
+        .createBatchSale(
           erc721.address,
           tokenIdMaster,
           zeroAddress,
-          minPrice,
+          buyNowPrice,
           layers,
           user3.address,
           emptyFeeRecipients,
@@ -272,15 +303,15 @@ describe("Batch Whitelist Sale", function () {
       await nftAuction
         .connect(user3)
         .makeBid(erc721.address, tokenIdMaster, zeroAddress, zeroERC20Tokens, {
-          value: minPrice,
+          value: buyNowPrice,
         });
       await nftAuction
         .connect(user1)
-        .createBatchWhiteListSale(
+        .createBatchSale(
           erc721.address,
           tokenIdMaster,
           zeroAddress,
-          minPrice,
+          buyNowPrice,
           layers,
           user2.address,
           emptyFeeRecipients,
@@ -292,14 +323,14 @@ describe("Batch Whitelist Sale", function () {
       );
       expect(result.nftHighestBidder).to.be.equal(zeroAddress);
     });
-    it("should revert underbid if whitelist sale created", async function () {
+    it("should allow early underbid from whitelisted buyer", async function () {
       await nftAuction
         .connect(user1)
-        .createBatchWhiteListSale(
+        .createBatchSale(
           erc721.address,
           tokenIdMaster,
           zeroAddress,
-          minPrice,
+          buyNowPrice,
           layers,
           user2.address,
           emptyFeeRecipients,
@@ -309,7 +340,7 @@ describe("Batch Whitelist Sale", function () {
         erc721.address,
         tokenIdMaster
       );
-      expect(result.nftHighestBidder).to.be.equal(zeroAddress);
+      expect(result.nftHighestBidder).to.be.equal(user2.address);
     });
   });
 });

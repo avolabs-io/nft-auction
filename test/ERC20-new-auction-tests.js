@@ -4,6 +4,7 @@ const { BigNumber } = require("ethers");
 
 const tokenId = 1;
 const minPrice = 100;
+const buyNowPrice = 10000;
 const newMinPrice = 50;
 const auctionBidPeriod = 86400; //seconds
 const bidIncreasePercentage = 1000;
@@ -64,6 +65,7 @@ describe("ERC20 New Auction Tests", function () {
         tokenId,
         erc20.address,
         minPrice,
+        buyNowPrice,
         auctionBidPeriod,
         bidIncreasePercentage,
         emptyFeeRecipients,
@@ -82,6 +84,7 @@ describe("ERC20 New Auction Tests", function () {
           tokenId,
           erc20.address,
           minPrice,
+          buyNowPrice,
           auctionBidPeriod,
           400,
           emptyFeeRecipients,
@@ -101,12 +104,13 @@ describe("ERC20 New Auction Tests", function () {
           tokenId,
           erc20.address,
           0,
+          buyNowPrice,
           auctionBidPeriod,
           bidIncreasePercentage,
           emptyFeeRecipients,
           emptyFeePercentages
         )
-    ).to.be.revertedWith("Minimum price cannot be 0");
+    ).to.be.revertedWith("Price cannot be 0");
   });
 
   it("should allow seller to create default Auction", async function () {
@@ -117,6 +121,7 @@ describe("ERC20 New Auction Tests", function () {
         tokenId,
         erc20.address,
         minPrice,
+        buyNowPrice,
         emptyFeeRecipients,
         emptyFeePercentages
       );
@@ -133,6 +138,7 @@ describe("ERC20 New Auction Tests", function () {
           tokenId,
           erc20.address,
           minPrice,
+          buyNowPrice,
           emptyFeeRecipients,
           emptyFeePercentages
         );
@@ -160,7 +166,7 @@ describe("ERC20 New Auction Tests", function () {
         nftAuction
           .connect(user1)
           .updateWhitelistedBuyer(erc721.address, tokenId, user3.address)
-      ).to.be.revertedWith("Not a whitelisted sale");
+      ).to.be.revertedWith("Not a sale");
     });
     it("should allow seller to update minimum price", async function () {
       await nftAuction

@@ -1,68 +1,57 @@
-const { expect } = require("chai");
+const { expect, assert } = require("chai");
 const { ethers } = require("hardhat");
 
 const { BigNumber } = require("ethers");
 // Enable and inject BN dependency
 
 const tokenId = 1;
-const buyNowPrice = 100;
-const newMinPrice = 50;
-const tokenBidAmount = 250;
-const tokenAmount = 500;
+const buyNowPrice = 10000;
 const auctionBidPeriod = 86400; //seconds
 const bidIncreasePercentage = 10;
 const zeroAddress = "0x0000000000000000000000000000000000000000";
-const zeroERC20Tokens = 0;
 const emptyFeeRecipients = [];
 const emptyFeePercentages = [];
 
 // Deploy and create a mock erc721 contract.
 
-describe("ERC20 Whitelist Sale Tests", function () {
+describe("Sale tests", function () {
   let ERC721;
   let erc721;
-  let ERC20;
-  let erc20;
   let NFTAuction;
   let nftAuction;
   let contractOwner;
   let user1;
   let user2;
   let user3;
+  let testArtist;
+  let testPlatform;
+  let feeRecipients;
+  let feePercentages;
 
   beforeEach(async function () {
     ERC721 = await ethers.getContractFactory("ERC721MockContract");
-    ERC20 = await ethers.getContractFactory("ERC20MockContract");
     NFTAuction = await ethers.getContractFactory("NFTAuction");
-    [ContractOwner, user1, user2, user3] = await ethers.getSigners();
-
+    [ContractOwner, user1, user2, user3, testArtist, testPlatform] =
+      await ethers.getSigners();
+    feeRecipients = [testArtist.address, testPlatform.address];
+    feePercentages = [1000, 100];
     erc721 = await ERC721.deploy("my mockables", "MBA");
     await erc721.deployed();
-    await erc721.mint(user1.address, 1);
-
-    erc20 = await ERC20.deploy("Mock ERC20", "MER");
-    await erc20.deployed();
-
-    await erc20.mint(user1.address, tokenAmount);
-    await erc20.mint(user2.address, tokenAmount);
-    await erc20.mint(user3.address, tokenAmount);
+    await erc721.mint(user1.address, tokenId);
 
     nftAuction = await NFTAuction.deploy();
     await nftAuction.deployed();
     //approve our smart contract to transfer this NFT
     await erc721.connect(user1).approve(nftAuction.address, tokenId);
-    await erc20.connect(user1).approve(nftAuction.address, tokenAmount);
-    await erc20.connect(user2).approve(nftAuction.address, tokenBidAmount);
-    await erc20.connect(user3).approve(nftAuction.address, tokenAmount);
   });
-  describe("Create basic whitelist sale", async function () {
+  describe("Create basic sale", async function () {
     beforeEach(async function () {
       await nftAuction.connect(user1).createSale(
         erc721.address,
         tokenId,
-        erc20.address,
+        zeroAddress,
         buyNowPrice,
-        user2.address, //whitelisted buyer
+        zeroAddress, //whitelisted buyer
         emptyFeeRecipients,
         emptyFeePercentages
       );
@@ -71,16 +60,17 @@ describe("ERC20 Whitelist Sale Tests", function () {
     it("should allow whitelist buyer to purchase NFT", async function () {
       await nftAuction
         .connect(user2)
-        .makeBid(erc721.address, tokenId, erc20.address, buyNowPrice);
+        .makeBid(erc721.address, tokenId, zeroAddress, 0, {
+          value: buyNowPrice,
+        });
       expect(await erc721.ownerOf(tokenId)).to.equal(user2.address);
-      expect(await erc20.balanceOf(user1.address)).to.be.equal(
-        BigNumber.from(tokenAmount + buyNowPrice).toString()
-      );
     });
     it("should reset variable if sale successful", async function () {
       await nftAuction
         .connect(user2)
-        .makeBid(erc721.address, tokenId, erc20.address, buyNowPrice);
+        .makeBid(erc721.address, tokenId, zeroAddress, 0, {
+          value: buyNowPrice,
+        });
       let result = await nftAuction.nftContractAuctions(
         erc721.address,
         tokenId
@@ -91,34 +81,31 @@ describe("ERC20 Whitelist Sale Tests", function () {
       expect(result.nftHighestBid.toString()).to.be.equal(
         BigNumber.from(0).toString()
       );
-      expect(result.ERC20Token).to.be.equal(zeroAddress);
     });
-    it("should allow whitelist buyer to purchase NFT and add recipient", async function () {
+    it("should allow user2 to purchase NFT and add recipient", async function () {
       await nftAuction
         .connect(user2)
-        .makeCustomBid(
-          erc721.address,
-          tokenId,
-          erc20.address,
-          buyNowPrice,
-          user3.address
-        );
+        .makeCustomBid(erc721.address, tokenId, zeroAddress, 0, user3.address, {
+          value: buyNowPrice,
+        });
       expect(await erc721.ownerOf(tokenId)).to.equal(user3.address);
     });
     // non whitelisted buyer should not be able to purchase NFT
-    it("should revert non whitelist buyer", async function () {
-      await expect(
-        nftAuction
-          .connect(user3)
-          .makeBid(erc721.address, tokenId, erc20.address, buyNowPrice)
-      ).to.be.revertedWith("only the whitelisted buyer can bid on this NFT");
-      expect(await erc721.ownerOf(tokenId)).to.equal(nftAuction.address);
+    it("should allow user3 to purchase NFT and add recipient", async function () {
+      await nftAuction
+        .connect(user3)
+        .makeBid(erc721.address, tokenId, zeroAddress, 0, {
+          value: buyNowPrice,
+        });
+      expect(await erc721.ownerOf(tokenId)).to.equal(user3.address);
     });
     //test buyer can't purchase nft below the minimum price
-    it("should allow whitelist buyer to bid below sale price", async function () {
+    it("should allow any buyer below sale price", async function () {
       await nftAuction
         .connect(user2)
-        .makeBid(erc721.address, tokenId, erc20.address, buyNowPrice - 1);
+        .makeBid(erc721.address, tokenId, zeroAddress, 0, {
+          value: buyNowPrice - 1,
+        });
       let result = await nftAuction.nftContractAuctions(
         erc721.address,
         tokenId
@@ -136,32 +123,16 @@ describe("ERC20 Whitelist Sale Tests", function () {
       await expect(
         nftAuction
           .connect(user2)
-          .makeBid(erc721.address, tokenId, erc20.address, buyNowPrice)
+          .makeBid(erc721.address, tokenId, zeroAddress, 0, {
+            value: buyNowPrice,
+          })
       ).to.be.revertedWith("only the whitelisted buyer can bid on this NFT");
       await nftAuction
         .connect(user3)
-        .makeBid(erc721.address, tokenId, erc20.address, buyNowPrice);
+        .makeBid(erc721.address, tokenId, zeroAddress, 0, {
+          value: buyNowPrice,
+        });
       expect(await erc721.ownerOf(tokenId)).to.equal(user3.address);
-    });
-    it("should revert underbid if different whitelist buyer set", async function () {
-      await nftAuction
-        .connect(user2)
-        .makeBid(erc721.address, tokenId, erc20.address, buyNowPrice - 1);
-      let result = await nftAuction.nftContractAuctions(
-        erc721.address,
-        tokenId
-      );
-      await nftAuction
-        .connect(user1)
-        .updateWhitelistedBuyer(erc721.address, tokenId, user3.address);
-      expect(await erc721.ownerOf(tokenId)).to.equal(nftAuction.address);
-      result = await nftAuction.nftContractAuctions(erc721.address, tokenId);
-
-      expect(result.buyNowPrice).to.be.not.equal(BigNumber.from(0).toString());
-      expect(result.nftHighestBid.toString()).to.be.equal(
-        BigNumber.from(0).toString()
-      );
-      expect(result.nftHighestBidder).to.be.equal(zeroAddress);
     });
     it("should not allow other users to update whitelisted buyer", async function () {
       await expect(
@@ -177,6 +148,53 @@ describe("ERC20 Whitelist Sale Tests", function () {
           .connect(user1)
           .updateMinimumPrice(erc721.address, tokenId, newMinPrice)
       ).to.be.revertedWith("cannot set minPrice of a sale");
+    });
+  });
+  describe("Create sale test with fees", function () {
+    beforeEach(async function () {
+      await nftAuction.connect(user1).createSale(
+        erc721.address,
+        tokenId,
+        zeroAddress,
+        buyNowPrice,
+        zeroAddress, //whitelisted buyer
+        feeRecipients,
+        feePercentages
+      );
+    });
+    it("should allow any buyer to purchase NFT", async function () {
+      let user1BalanceBeforePayout = await user1.getBalance();
+      let testPlatformBalanceBeforePayout = await testPlatform.getBalance();
+      let testArtistBalanceBeforePayout = await testArtist.getBalance();
+      await nftAuction
+        .connect(user2)
+        .makeBid(erc721.address, tokenId, zeroAddress, 0, {
+          value: buyNowPrice,
+        });
+      let platformAmount = BigNumber.from(testPlatformBalanceBeforePayout).add(
+        BigNumber.from((buyNowPrice * 100) / 10000)
+      );
+      let artistAmount = BigNumber.from(testArtistBalanceBeforePayout).add(
+        BigNumber.from((buyNowPrice * 1000) / 10000)
+      );
+
+      let user1Amount = BigNumber.from(buyNowPrice)
+        .sub(BigNumber.from((buyNowPrice * 100) / 10000))
+        .sub(BigNumber.from((buyNowPrice * 1000) / 10000));
+      user1Amount = user1Amount.add(BigNumber.from(user1BalanceBeforePayout));
+      let platformBal = await testPlatform.getBalance();
+      let artistBal = await testArtist.getBalance();
+      let user1Bal = await user1.getBalance();
+      expect(await erc721.ownerOf(tokenId)).to.equal(user2.address);
+      await expect(BigNumber.from(platformBal).toString()).to.be.equal(
+        platformAmount
+      );
+      await expect(BigNumber.from(artistBal).toString()).to.be.equal(
+        artistAmount
+      );
+      await expect(BigNumber.from(user1Bal).toString()).to.be.equal(
+        user1Amount
+      );
     });
   });
 });
