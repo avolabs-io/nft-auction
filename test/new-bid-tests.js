@@ -10,6 +10,7 @@ const newMinPrice = 50;
 const buyNowPrice = 100000;
 const auctionBidPeriod = 86400; //seconds
 const bidIncreasePercentage = 1000;
+const highBidIncreasePercentage = 2500;
 const zeroAddress = "0x0000000000000000000000000000000000000000";
 const zeroERC20Tokens = 0;
 const emptyFeeRecipients = [];
@@ -238,7 +239,7 @@ describe("NFTAuction Bids", function () {
           value: minPrice,
         });
       const bidIncreaseByMinPercentage =
-        (minPrice * (10000 + bidIncreasePercentage)) / 10000;
+        (minPrice * (10000 + highBidIncreasePercentage)) / 10000;
       await nftAuction
         .connect(user3)
         .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {

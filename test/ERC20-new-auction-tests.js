@@ -140,7 +140,7 @@ describe("ERC20 New Auction Tests", function () {
           minPrice,
           buyNowPrice,
           auctionBidPeriod,
-          4,
+          400,
           emptyFeeRecipients,
           emptyFeePercentages
         )
@@ -181,7 +181,7 @@ describe("ERC20 New Auction Tests", function () {
           emptyFeeRecipients,
           emptyFeePercentages
         )
-    ).to.be.revertedWith("Min price cannot exceed buy now price");
+    ).to.be.revertedWith("Min price cannot exceed 80% of buyNowPrice");
   });
 
   describe("Test when no bids made on new auction", function () {
@@ -240,7 +240,7 @@ describe("ERC20 New Auction Tests", function () {
         nftAuction
           .connect(user1)
           .updateMinimumPrice(erc721.address, tokenId, buyNowPrice + 1)
-      ).to.be.revertedWith("Min price cannot exceed buy now price");
+      ).to.be.revertedWith("Min price cannot exceed 80% of buyNowPrice");
     });
     it("should not allow seller to take highest bid when no bid made", async function () {
       await expect(
