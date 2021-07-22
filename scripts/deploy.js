@@ -13,8 +13,11 @@ async function main() {
 
   const erc721 = await ERC721.deploy("New Mocks", "NMK");
 
+  //verify: npx hardhat verify --network rinkeby DEPLOYED_CONTRACT_ADDRESS
   console.log("nftAuction address:", nftAuction.address);
+  //verify: npx hardhat verify --network rinkeby --constructor-args erc20Arguments.js DEPLOYED_CONTRACT_ADDRESS
   console.log("ERC20 Token address:", erc20.address);
+  //verify: npx hardhat verify --network rinkeby --constructor-args arguments.js DEPLOYED_CONTRACT_ADDRESS
   console.log("ERC721 Token address:", erc721.address);
 }
 

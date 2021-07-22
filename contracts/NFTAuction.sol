@@ -68,6 +68,12 @@ contract NFTAuction {
         address bidder
     );
 
+    event AuctionPeriodUpdated(
+        address nftContractAddress,
+        uint256 tokenId,
+        uint256 auctionEndPeriod
+    );
+
     event NFTTransferredAndSellerPaid(
         address nftContractAddress,
         uint256 tokenId,
@@ -1020,6 +1026,11 @@ contract NFTAuction {
         nftContractAuctions[_nftContractAddress][_tokenId].auctionEnd =
             _getAuctionBidPeriod(_nftContractAddress, _tokenId) +
             block.timestamp;
+        AuctionPeriodUpdated(
+            _nftContractAddress,
+            _tokenId,
+            nftContractAuctions[_nftContractAddress][_tokenId].auctionEnd
+        );
     }
 
     /**********************************/
