@@ -259,7 +259,7 @@ describe("Batch Whitelist Sale", function () {
         nftAuction
           .connect(user1)
           .updateMinimumPrice(erc721.address, tokenIdMaster, newMinPrice)
-      ).to.be.revertedWith("cannot set minPrice of a sale");
+      ).to.be.revertedWith("Not applicable for a sale");
     });
   });
   /*

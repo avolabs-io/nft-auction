@@ -109,6 +109,23 @@ describe("NFTAuction", function () {
         )
     ).to.be.revertedWith("Price cannot be 0");
   });
+  it("should not allow seller to set min price greater than buy now price", async function () {
+    await expect(
+      nftAuction
+        .connect(user1)
+        .createNewNftAuction(
+          erc721.address,
+          tokenId,
+          zeroAddress,
+          buyNowPrice,
+          minPrice,
+          auctionBidPeriod,
+          bidIncreasePercentage,
+          emptyFeeRecipients,
+          emptyFeePercentages
+        )
+    ).to.be.revertedWith("Min price cannot exceed buy now price");
+  });
 
   it("should allow seller to create default Auction", async function () {
     await nftAuction
@@ -242,6 +259,13 @@ describe("NFTAuction", function () {
       expect(result.minPrice.toString()).to.be.equal(
         BigNumber.from(newMinPrice).toString()
       );
+    });
+    it("should not allow seller to update minimum price above buyNowPrice", async function () {
+      await expect(
+        nftAuction
+          .connect(user1)
+          .updateMinimumPrice(erc721.address, tokenId, buyNowPrice + 1)
+      ).to.be.revertedWith("Min price cannot exceed buy now price");
     });
     it("should not allow seller to take highest bid when no bid made", async function () {
       await expect(

@@ -147,7 +147,7 @@ describe("Sale tests", function () {
         nftAuction
           .connect(user1)
           .updateMinimumPrice(erc721.address, tokenId, newMinPrice)
-      ).to.be.revertedWith("cannot set minPrice of a sale");
+      ).to.be.revertedWith("Not applicable for a sale");
     });
   });
   describe("Create sale test with fees", function () {

@@ -77,6 +77,19 @@ contract NFTAuction {
         _;
     }
 
+    modifier buyNowPriceGreaterThanMinPrice(
+        uint256 _buyNowPrice,
+        uint256 _minPrice
+    ) {
+        //TODO
+        //Implement a limit for the minprice to be say, 50% of the buyNowPrice
+        require(
+            _buyNowPrice > _minPrice,
+            "Min price cannot exceed buy now price"
+        );
+        _;
+    }
+
     modifier notNftSeller(address _nftContractAddress, uint256 _tokenId) {
         require(
             msg.sender !=
@@ -191,6 +204,14 @@ contract NFTAuction {
         require(
             _recipientsLength == _percentagesLength,
             "mismatched fee recipients and percentages"
+        );
+        _;
+    }
+
+    modifier isNotASale(address _nftContractAddress, uint256 _tokenId) {
+        require(
+            !_isASale(_nftContractAddress, _tokenId),
+            "Not applicable for a sale"
         );
         _;
     }
@@ -524,6 +545,7 @@ contract NFTAuction {
         uint32[] memory _feePercentages
     )
         internal
+        buyNowPriceGreaterThanMinPrice(_getBuyNowPrice(_buyNowPrice), _minPrice)
         correctFeeRecipientsAndPercentages(
             _feeRecipients.length,
             _feePercentages.length
@@ -1251,11 +1273,13 @@ contract NFTAuction {
         external
         onlyNftSeller(_nftContractAddress, _tokenId)
         minimumBidNotMade(_nftContractAddress, _tokenId)
+        isNotASale(_nftContractAddress, _tokenId)
+        priceGreaterThanZero(_newMinPrice)
+        buyNowPriceGreaterThanMinPrice(
+            nftContractAuctions[_nftContractAddress][_tokenId].buyNowPrice,
+            _newMinPrice
+        )
     {
-        require(
-            !_isASale(_nftContractAddress, _tokenId),
-            "cannot set minPrice of a sale"
-        );
         nftContractAuctions[_nftContractAddress][_tokenId]
         .minPrice = _newMinPrice;
         if (_isMinimumBidMade(_nftContractAddress, _tokenId)) {
@@ -1267,7 +1291,15 @@ contract NFTAuction {
         address _nftContractAddress,
         uint256 _tokenId,
         uint256 _newBuyNowPrice
-    ) external onlyNftSeller(_nftContractAddress, _tokenId) {
+    )
+        external
+        onlyNftSeller(_nftContractAddress, _tokenId)
+        priceGreaterThanZero(_newBuyNowPrice)
+        buyNowPriceGreaterThanMinPrice(
+            _newBuyNowPrice,
+            nftContractAuctions[_nftContractAddress][_tokenId].minPrice
+        )
+    {
         nftContractAuctions[_nftContractAddress][_tokenId]
         .buyNowPrice = _newBuyNowPrice;
         if (_isBuyNowPriceMet(_nftContractAddress, _tokenId)) {
