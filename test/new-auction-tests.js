@@ -124,7 +124,7 @@ describe("NFTAuction", function () {
           emptyFeeRecipients,
           emptyFeePercentages
         )
-    ).to.be.revertedWith("Min price cannot exceed buy now price");
+    ).to.be.revertedWith("Min price cannot exceed 80% of buyNowPrice");
   });
 
   it("should allow seller to create default Auction", async function () {
@@ -265,7 +265,7 @@ describe("NFTAuction", function () {
         nftAuction
           .connect(user1)
           .updateMinimumPrice(erc721.address, tokenId, buyNowPrice + 1)
-      ).to.be.revertedWith("Min price cannot exceed buy now price");
+      ).to.be.revertedWith("Min price cannot exceed 80% of buyNowPrice");
     });
     it("should not allow seller to take highest bid when no bid made", async function () {
       await expect(
