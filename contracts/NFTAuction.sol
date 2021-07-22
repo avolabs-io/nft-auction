@@ -1026,7 +1026,7 @@ contract NFTAuction {
         nftContractAuctions[_nftContractAddress][_tokenId].auctionEnd =
             _getAuctionBidPeriod(_nftContractAddress, _tokenId) +
             block.timestamp;
-        AuctionPeriodUpdated(
+        emit AuctionPeriodUpdated(
             _nftContractAddress,
             _tokenId,
             nftContractAuctions[_nftContractAddress][_tokenId].auctionEnd
