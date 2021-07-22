@@ -271,14 +271,6 @@ contract NFTAuction {
         uint256 _tokenId,
         uint256 _tokenAmount
     ) internal view returns (bool) {
-        //if the NFT is only for sale, then the bidder needs to meet the buyNowPrice
-        // if (_isASale(_nftContractAddress, _tokenId)) {
-        //     return (msg.value >=
-        //         nftContractAuctions[_nftContractAddress][_tokenId]
-        //         .buyNowPrice ||
-        //         _tokenAmount >=
-        //         nftContractAuctions[_nftContractAddress][_tokenId].buyNowPrice);
-        // } else {
         //if the NFT is up for auction, the bid needs to be a % higher than the previous bid
         uint256 bidIncreaseAmount = (nftContractAuctions[_nftContractAddress][
             _tokenId
