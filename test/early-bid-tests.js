@@ -7,6 +7,7 @@ const { BigNumber } = require("ethers");
 const tokenId = 1;
 const minPrice = 100;
 const newMinPrice = 50;
+const buyNowPrice = 10000;
 const auctionBidPeriod = 86400; //seconds
 const bidIncreasePercentage = 10;
 const zeroAddress = "0x0000000000000000000000000000000000000000";
@@ -62,6 +63,7 @@ describe("Early bid tests", function () {
         tokenId,
         zeroAddress,
         minPrice,
+        buyNowPrice,
         emptyFeeRecipients,
         emptyFeePercentages
       );
@@ -77,6 +79,7 @@ describe("Early bid tests", function () {
         tokenId,
         zeroAddress,
         minPrice,
+        buyNowPrice,
         emptyFeeRecipients,
         emptyFeePercentages
       );
@@ -84,20 +87,21 @@ describe("Early bid tests", function () {
     let result = await nftAuction.nftContractAuctions(erc721.address, tokenId);
     expect(result.auctionEnd).to.be.not.equal(BigNumber.from(0).toString());
   });
-  it("should start auction period if early bid greater than minimum", async function () {
+  it("should not start auction period if early bid less than minimum", async function () {
     await nftAuction
       .connect(user1)
       .createDefaultNftAuction(
         erc721.address,
         tokenId,
         zeroAddress,
-        minPrice - 1,
+        minPrice + 100,
+        buyNowPrice,
         emptyFeeRecipients,
         emptyFeePercentages
       );
 
     let result = await nftAuction.nftContractAuctions(erc721.address, tokenId);
-    expect(result.auctionEnd).to.be.not.equal(BigNumber.from(0).toString());
+    expect(result.auctionEnd).to.be.equal(BigNumber.from(0).toString());
   });
   it("should not allow minPrice to be updated by other users", async function () {
     await expect(
@@ -105,5 +109,19 @@ describe("Early bid tests", function () {
         .connect(user2)
         .updateMinimumPrice(erc721.address, tokenId, newMinPrice)
     ).to.be.revertedWith("Only the owner can call this function");
+  });
+  it("should revert early bid if whitelist sale created for different user", async function () {
+    await nftAuction.connect(user1).createSale(
+      erc721.address,
+      tokenId,
+      zeroAddress,
+      buyNowPrice,
+      user3.address, //whitelisted buyer
+      emptyFeeRecipients,
+      emptyFeePercentages
+    );
+    let result = await nftAuction.nftContractAuctions(erc721.address, tokenId);
+    expect(result.auctionEnd).to.be.equal(BigNumber.from(0).toString());
+    expect(result.nftHighestBidder).to.be.equal(zeroAddress);
   });
 });

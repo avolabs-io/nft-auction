@@ -6,6 +6,7 @@ const { network } = require("hardhat");
 const tokenId = 1;
 const minPrice = 10000;
 const newPrice = 15000;
+const buyNowPrice = 100000;
 const tokenBidAmount = 25000;
 const tokenAmount = 50000;
 const zeroAddress = "0x0000000000000000000000000000000000000000";
@@ -60,6 +61,7 @@ describe("Test Secondary Sale and fees", function () {
         tokenId,
         zeroAddress,
         minPrice,
+        buyNowPrice,
         auctionBidPeriod,
         bidIncreasePercentage,
         feeRecipients,
@@ -147,6 +149,7 @@ describe("Test Secondary Sale and fees", function () {
         tokenId,
         zeroAddress,
         bidIncreaseByMinPercentage3,
+        buyNowPrice,
         auctionBidPeriod,
         bidIncreasePercentage,
         feeRecipients2,

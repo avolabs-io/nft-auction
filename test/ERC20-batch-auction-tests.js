@@ -7,6 +7,7 @@ const tokenIdMaster = 1;
 
 const minPrice = 10000;
 const newPrice = 15000;
+const buyNowPrice = 100000;
 const tokenBidAmount = 25000;
 const tokenAmount = 50000;
 const auctionBidPeriod = 106400; //seconds
@@ -70,6 +71,7 @@ describe("Batch Auctions with ERC20 Tokens", function () {
         tokenIdMaster,
         erc20.address,
         minPrice,
+        buyNowPrice,
         layers,
         emptyFeeRecipients,
         emptyFeePercentages
@@ -88,11 +90,12 @@ describe("Batch Auctions with ERC20 Tokens", function () {
           tokenIdMaster,
           erc20.address,
           0,
+          buyNowPrice,
           layers,
           emptyFeeRecipients,
           emptyFeePercentages
         )
-    ).to.be.revertedWith("Minimum price cannot be 0");
+    ).to.be.revertedWith("Price cannot be 0");
   });
 
   describe(" Default Batch Auction Bids and settlement tests", async function () {
@@ -104,6 +107,7 @@ describe("Batch Auctions with ERC20 Tokens", function () {
           tokenIdMaster,
           erc20.address,
           minPrice,
+          buyNowPrice,
           layers,
           emptyFeeRecipients,
           emptyFeePercentages
@@ -127,6 +131,9 @@ describe("Batch Auctions with ERC20 Tokens", function () {
         tokenIdMaster
       );
       expect(result.minPrice.toString()).to.be.equal(
+        BigNumber.from(0).toString()
+      );
+      expect(result.buyNowPrice.toString()).to.be.equal(
         BigNumber.from(0).toString()
       );
     });
@@ -178,6 +185,7 @@ describe("Batch Auctions with ERC20 Tokens", function () {
           tokenIdMaster,
           erc20.address,
           minPrice,
+          buyNowPrice,
           layers,
           auctionBidPeriod,
           bidIncreasePercentage,

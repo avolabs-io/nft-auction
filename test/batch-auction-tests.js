@@ -7,6 +7,7 @@ const tokenIdMaster = 1;
 
 const minPrice = 10000;
 const newPrice = 15000;
+const buyNowPrice = 100000;
 const auctionBidPeriod = 106400; //seconds
 const layers = [2, 3, 4, 5, 6, 7, 8, 9, 10];
 const zeroAddress = "0x0000000000000000000000000000000000000000";
@@ -55,6 +56,7 @@ describe("Batch Auction", function () {
         tokenIdMaster,
         zeroAddress,
         minPrice,
+        buyNowPrice,
         layers,
         emptyFeeRecipients,
         emptyFeePercentages
@@ -73,11 +75,12 @@ describe("Batch Auction", function () {
           tokenIdMaster,
           zeroAddress,
           0,
+          buyNowPrice,
           layers,
           emptyFeeRecipients,
           emptyFeePercentages
         )
-    ).to.be.revertedWith("Minimum price cannot be 0");
+    ).to.be.revertedWith("Price cannot be 0");
   });
   describe("test maximum layer limit", async function () {
     beforeEach(async function () {
@@ -111,6 +114,7 @@ describe("Batch Auction", function () {
             tokenIdMaster,
             zeroAddress,
             minPrice,
+            buyNowPrice,
             maxLayers,
             emptyFeeRecipients,
             emptyFeePercentages
@@ -127,6 +131,7 @@ describe("Batch Auction", function () {
           tokenIdMaster,
           zeroAddress,
           minPrice,
+          buyNowPrice,
           layers,
           emptyFeeRecipients,
           emptyFeePercentages
@@ -206,6 +211,7 @@ describe("Batch Auction", function () {
           tokenIdMaster,
           zeroAddress,
           minPrice,
+          buyNowPrice,
           layers,
           auctionBidPeriod,
           bidIncreasePercentage,
@@ -296,6 +302,7 @@ describe("Batch Auction", function () {
           tokenIdMaster,
           zeroAddress,
           minPrice,
+          buyNowPrice,
           layers,
           emptyFeeRecipients,
           emptyFeePercentages
@@ -313,6 +320,7 @@ describe("Batch Auction", function () {
           tokenIdMaster,
           zeroAddress,
           minPrice,
+          buyNowPrice,
           layers,
           emptyFeeRecipients,
           emptyFeePercentages

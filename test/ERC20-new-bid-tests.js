@@ -6,9 +6,10 @@ const { BigNumber } = require("ethers");
 
 const tokenId = 1;
 const minPrice = 100;
+const buyNowPrice = 10000;
 const newMinPrice = 50;
 const tokenBidAmount = 250;
-const tokenAmount = 500;
+const tokenAmount = 50000;
 const auctionBidPeriod = 86400; //seconds
 const bidIncreasePercentage = 1000;
 const zeroAddress = "0x0000000000000000000000000000000000000000";
@@ -58,7 +59,7 @@ describe("ERC20 New Bid Tests", function () {
     //approve our smart contract to transfer this NFT
     await erc721.connect(user1).approve(nftAuction.address, tokenId);
     await erc20.connect(user1).approve(nftAuction.address, tokenAmount);
-    await erc20.connect(user2).approve(nftAuction.address, tokenBidAmount);
+    await erc20.connect(user2).approve(nftAuction.address, tokenAmount);
     await erc20.connect(user3).approve(nftAuction.address, tokenAmount);
   });
 
@@ -71,6 +72,7 @@ describe("ERC20 New Bid Tests", function () {
           tokenId,
           erc20.address,
           minPrice,
+          buyNowPrice,
           auctionBidPeriod,
           bidIncreasePercentage,
           emptyFeeRecipients,
@@ -123,7 +125,7 @@ describe("ERC20 New Bid Tests", function () {
             erc20.address,
             (minPrice * 10100) / 10000
           )
-      ).to.be.revertedWith("Bid must be % more than previous highest bid");
+      ).to.be.revertedWith("Not enough funds to bid on NFT");
     });
 
     it("should allow for new bid if higher than minimum percentage", async function () {
@@ -213,7 +215,87 @@ describe("ERC20 New Bid Tests", function () {
         "Bid to be made in quantities of specified token or eth"
       );
     });
-    // test for full functionality of makeBid still needed
+    it("should not allow user to set 0 tokenAmount and 0 Eth amount", async function () {
+      await expect(
+        nftAuction
+          .connect(user2)
+          .makeBid(erc721.address, tokenId, erc20.address, zeroERC20Tokens)
+      ).to.be.revertedWith(
+        "Bid to be made in quantities of specified token or eth"
+      );
+    });
+    it("should allow bidder to buy NFT by meeting buyNowPrice", async function () {
+      await nftAuction
+        .connect(user2)
+        .makeBid(erc721.address, tokenId, erc20.address, buyNowPrice);
+      expect(await erc721.ownerOf(tokenId)).to.equal(user2.address);
+    });
+    it("should reset auction if buyNowPrice met", async function () {
+      await nftAuction
+        .connect(user2)
+        .makeBid(erc721.address, tokenId, erc20.address, buyNowPrice);
+      let result = await nftAuction.nftContractAuctions(
+        erc721.address,
+        tokenId
+      );
+      expect(result.minPrice.toString()).to.be.equal(
+        BigNumber.from(0).toString()
+      );
+      expect(result.buyNowPrice.toString()).to.be.equal(
+        BigNumber.from(0).toString()
+      );
+      expect(result.nftSeller).to.be.equal(zeroAddress);
+    });
+    it("should allow seller take highestbid and conclude auction", async function () {
+      await nftAuction
+        .connect(user2)
+        .makeBid(erc721.address, tokenId, erc20.address, minPrice);
+      const bidIncreaseByMinPercentage =
+        (minPrice * (10000 + bidIncreasePercentage)) / 10000;
+      await nftAuction
+        .connect(user3)
+        .makeBid(
+          erc721.address,
+          tokenId,
+          erc20.address,
+          bidIncreaseByMinPercentage
+        );
+      let result = await nftAuction.nftContractAuctions(
+        erc721.address,
+        tokenId
+      );
+      expect(result.auctionEnd).to.be.not.equal(BigNumber.from(0));
+      await nftAuction.connect(user1).takeHighestBid(erc721.address, tokenId);
+      result = await nftAuction.nftContractAuctions(erc721.address, tokenId);
+      expect(result.auctionEnd).to.be.equal(BigNumber.from(0));
+      expect(await erc721.ownerOf(tokenId)).to.be.equal(user3.address);
+    });
+    it("should allow seller update buyNowPrice and conclude auction", async function () {
+      await nftAuction
+        .connect(user2)
+        .makeBid(erc721.address, tokenId, erc20.address, minPrice);
+      const bidIncreaseByMinPercentage =
+        (minPrice * (10000 + bidIncreasePercentage)) / 10000;
+      await nftAuction
+        .connect(user3)
+        .makeBid(
+          erc721.address,
+          tokenId,
+          erc20.address,
+          bidIncreaseByMinPercentage
+        );
+      let result = await nftAuction.nftContractAuctions(
+        erc721.address,
+        tokenId
+      );
+      expect(result.auctionEnd).to.be.not.equal(BigNumber.from(0));
+      await nftAuction
+        .connect(user1)
+        .updateBuyNowPrice(erc721.address, tokenId, bidIncreaseByMinPercentage);
+      result = await nftAuction.nftContractAuctions(erc721.address, tokenId);
+      expect(result.auctionEnd).to.be.equal(BigNumber.from(0));
+      expect(await erc721.ownerOf(tokenId)).to.be.equal(user3.address);
+    });
   });
   describe("Test underbid functionality", function () {
     let underBid = minPrice - 10;
@@ -227,6 +309,7 @@ describe("ERC20 New Bid Tests", function () {
           tokenId,
           erc20.address,
           minPrice,
+          buyNowPrice,
           auctionBidPeriod,
           bidIncreasePercentage,
           emptyFeeRecipients,

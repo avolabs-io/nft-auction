@@ -6,6 +6,7 @@ const { network } = require("hardhat");
 const tokenId = 1;
 const minPrice = 10000;
 const newPrice = 15000;
+const buyNowPrice = 100000;
 const tokenBidAmount = 25000;
 const tokenAmount = 50000;
 const zeroAddress = "0x0000000000000000000000000000000000000000";
@@ -53,6 +54,7 @@ describe("End to end auction tests", function () {
           tokenId,
           zeroAddress,
           minPrice,
+          buyNowPrice,
           emptyFeeRecipients,
           emptyFeePercentages
         );
@@ -108,6 +110,7 @@ describe("End to end auction tests", function () {
           tokenId,
           zeroAddress,
           minPrice,
+          buyNowPrice,
           auctionBidPeriod,
           bidIncreasePercentage,
           emptyFeeRecipients,
@@ -195,6 +198,7 @@ describe("End to end auction tests", function () {
           tokenId,
           zeroAddress,
           minPrice,
+          buyNowPrice,
           auctionBidPeriod,
           bidIncreasePercentage,
           emptyFeeRecipients,
@@ -207,7 +211,7 @@ describe("End to end auction tests", function () {
           .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
             value: minPrice,
           })
-      ).to.be.revertedWith("Bid must be % more than previous highest bid");
+      ).to.be.revertedWith("Not enough funds to bid on NFT");
 
       const bidIncreaseByMinPercentage =
         (minPrice * (10000 + bidIncreasePercentage)) / 10000;
@@ -254,6 +258,7 @@ describe("End to end auction tests", function () {
           tokenId,
           zeroAddress,
           minPrice,
+          buyNowPrice,
           auctionBidPeriod,
           bidIncreasePercentage,
           emptyFeeRecipients,
@@ -351,6 +356,7 @@ describe("End to end auction tests", function () {
           tokenId,
           erc20.address,
           minPrice,
+          buyNowPrice,
           emptyFeeRecipients,
           emptyFeePercentages
         );

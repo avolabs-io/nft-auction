@@ -5,6 +5,8 @@ const { BigNumber } = require("ethers");
 const tokenId = 1;
 const minPrice = 100;
 const newMinPrice = 50;
+const buyNowPrice = 100000;
+const newBuyNowPrice = 50000;
 const auctionBidPeriod = 86400; //seconds
 const bidIncreasePercentage = 1000;
 const zeroAddress = "0x0000000000000000000000000000000000000000";
@@ -54,6 +56,7 @@ describe("NFTAuction", function () {
         tokenId,
         zeroAddress,
         minPrice,
+        buyNowPrice,
         auctionBidPeriod,
         bidIncreasePercentage,
         emptyFeeRecipients,
@@ -78,6 +81,7 @@ describe("NFTAuction", function () {
           tokenId,
           zeroAddress,
           minPrice,
+          buyNowPrice,
           auctionBidPeriod,
           4,
           emptyFeeRecipients,
@@ -88,7 +92,7 @@ describe("NFTAuction", function () {
     );
   });
 
-  it("should revert new auction with MinPrice of 0", async function () {
+  it("should revert new auction with MinPrice & BuyNowPrice of 0", async function () {
     await expect(
       nftAuction
         .connect(user1)
@@ -97,12 +101,30 @@ describe("NFTAuction", function () {
           tokenId,
           zeroAddress,
           0,
+          0,
           auctionBidPeriod,
           bidIncreasePercentage,
           emptyFeeRecipients,
           emptyFeePercentages
         )
-    ).to.be.revertedWith("Minimum price cannot be 0");
+    ).to.be.revertedWith("Price cannot be 0");
+  });
+  it("should not allow seller to set min price greater than buy now price", async function () {
+    await expect(
+      nftAuction
+        .connect(user1)
+        .createNewNftAuction(
+          erc721.address,
+          tokenId,
+          zeroAddress,
+          buyNowPrice,
+          minPrice,
+          auctionBidPeriod,
+          bidIncreasePercentage,
+          emptyFeeRecipients,
+          emptyFeePercentages
+        )
+    ).to.be.revertedWith("Min price cannot exceed buy now price");
   });
 
   it("should allow seller to create default Auction", async function () {
@@ -113,10 +135,25 @@ describe("NFTAuction", function () {
         tokenId,
         zeroAddress,
         minPrice,
+        buyNowPrice,
         emptyFeeRecipients,
         emptyFeePercentages
       );
 
+    expect(await erc721.ownerOf(tokenId)).to.equal(nftAuction.address);
+  });
+  it("should allow seller to set 0 buyNowPrice", async function () {
+    await nftAuction
+      .connect(user1)
+      .createDefaultNftAuction(
+        erc721.address,
+        tokenId,
+        zeroAddress,
+        minPrice,
+        0,
+        emptyFeeRecipients,
+        emptyFeePercentages
+      );
     expect(await erc721.ownerOf(tokenId)).to.equal(nftAuction.address);
   });
   it("shoulld allow seller to specify fees", async function () {
@@ -127,6 +164,7 @@ describe("NFTAuction", function () {
         tokenId,
         zeroAddress,
         minPrice,
+        buyNowPrice,
         feeRecipients,
         feePercentages
       );
@@ -142,6 +180,7 @@ describe("NFTAuction", function () {
           tokenId,
           zeroAddress,
           minPrice,
+          buyNowPrice,
           feeRecipients,
           feePercentages
         )
@@ -157,6 +196,7 @@ describe("NFTAuction", function () {
           tokenId,
           zeroAddress,
           minPrice,
+          buyNowPrice,
           feeRecipients,
           feePercentages
         )
@@ -172,6 +212,7 @@ describe("NFTAuction", function () {
           tokenId,
           zeroAddress,
           minPrice,
+          buyNowPrice,
           emptyFeeRecipients,
           emptyFeePercentages
         );
@@ -190,6 +231,9 @@ describe("NFTAuction", function () {
       expect(result.minPrice.toString()).to.be.equal(
         BigNumber.from(0).toString()
       );
+      expect(result.buyNowPrice.toString()).to.be.equal(
+        BigNumber.from(0).toString()
+      );
       expect(result.nftSeller).to.be.equal(zeroAddress);
     });
     it("should not allow other users to withdraw NFT", async function () {
@@ -202,7 +246,7 @@ describe("NFTAuction", function () {
         nftAuction
           .connect(user1)
           .updateWhitelistedBuyer(erc721.address, tokenId, user3.address)
-      ).to.be.revertedWith("Not a whitelisted sale");
+      ).to.be.revertedWith("Not a sale");
     });
     it("should allow seller to update minimum price", async function () {
       await nftAuction
@@ -214,6 +258,30 @@ describe("NFTAuction", function () {
       );
       expect(result.minPrice.toString()).to.be.equal(
         BigNumber.from(newMinPrice).toString()
+      );
+    });
+    it("should not allow seller to update minimum price above buyNowPrice", async function () {
+      await expect(
+        nftAuction
+          .connect(user1)
+          .updateMinimumPrice(erc721.address, tokenId, buyNowPrice + 1)
+      ).to.be.revertedWith("Min price cannot exceed buy now price");
+    });
+    it("should not allow seller to take highest bid when no bid made", async function () {
+      await expect(
+        nftAuction.connect(user1).takeHighestBid(erc721.address, tokenId)
+      ).to.be.revertedWith("cannot payout 0 bid");
+    });
+    it("should allow seller to update buy now price", async function () {
+      await nftAuction
+        .connect(user1)
+        .updateBuyNowPrice(erc721.address, tokenId, newBuyNowPrice);
+      let result = await nftAuction.nftContractAuctions(
+        erc721.address,
+        tokenId
+      );
+      expect(result.buyNowPrice.toString()).to.be.equal(
+        BigNumber.from(newBuyNowPrice).toString()
       );
     });
     it("should not allow other user to update min price", async function () {
