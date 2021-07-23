@@ -41,6 +41,7 @@ contract NFTAuction {
     event NftAuctionCreated(
         address nftContractAddress,
         uint256 tokenId,
+        address nftSeller,
         address erc20Token,
         uint256 minPrice,
         uint256 buyNowPrice,
@@ -53,6 +54,7 @@ contract NFTAuction {
     event SaleCreated(
         address nftContractAddress,
         uint256 tokenId,
+        address nftSeller,
         address erc20Token,
         uint256 buyNowPrice,
         address whiteListedBuyer,
@@ -63,9 +65,10 @@ contract NFTAuction {
     event BidMade(
         address nftContractAddress,
         uint256 tokenId,
+        address bidder,
+        uint256 ethAmount,
         address erc20Token,
-        uint256 tokenAmount,
-        address bidder
+        uint256 tokenAmount
     );
 
     event AuctionPeriodUpdated(
@@ -285,7 +288,7 @@ contract NFTAuction {
     /**********************************/
     // constructor
     constructor() {
-        defaultBidIncreasePercentage = 10;
+        defaultBidIncreasePercentage = 1000;
         defaultAuctionBidPeriod = 86400; //1 day
         minimumSettableIncreasePercentage = 500;
         maximumMinPricePercentage = 8000;
@@ -652,6 +655,7 @@ contract NFTAuction {
         emit NftAuctionCreated(
             _nftContractAddress,
             _tokenId,
+            msg.sender,
             _erc20Token,
             _minPrice,
             _buyNowPrice,
@@ -840,6 +844,7 @@ contract NFTAuction {
         emit SaleCreated(
             _nftContractAddress,
             _tokenId,
+            msg.sender,
             _erc20Token,
             _buyNowPrice,
             _whiteListedBuyer,
@@ -936,7 +941,6 @@ contract NFTAuction {
         uint256 _tokenAmount
     )
         internal
-        auctionOngoing(_nftContractAddress, _tokenId)
         notNftSeller(_nftContractAddress, _tokenId)
         paymentAccepted(
             _nftContractAddress,
@@ -958,9 +962,10 @@ contract NFTAuction {
         emit BidMade(
             _nftContractAddress,
             _tokenId,
+            msg.sender,
+            msg.value,
             _erc20Token,
-            _tokenAmount,
-            msg.sender
+            _tokenAmount
         );
         _updateOngoingAuction(_nftContractAddress, _tokenId);
     }
@@ -970,7 +975,12 @@ contract NFTAuction {
         uint256 _tokenId,
         address _erc20Token,
         uint256 _tokenAmount
-    ) public payable onlyApplicableBuyer(_nftContractAddress, _tokenId) {
+    )
+        public
+        payable
+        auctionOngoing(_nftContractAddress, _tokenId)
+        onlyApplicableBuyer(_nftContractAddress, _tokenId)
+    {
         _makeBid(_nftContractAddress, _tokenId, _erc20Token, _tokenAmount);
     }
 
@@ -983,6 +993,7 @@ contract NFTAuction {
     )
         external
         payable
+        auctionOngoing(_nftContractAddress, _tokenId)
         notZeroAddress(_nftRecipient)
         onlyApplicableBuyer(_nftContractAddress, _tokenId)
     {
