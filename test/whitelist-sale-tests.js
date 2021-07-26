@@ -221,4 +221,64 @@ describe("Whitelist sale tests", function () {
       );
     });
   });
+  describe("Test early bids with whitelist sales", async function () {
+    let underBid = buyNowPrice - 1000;
+    let result;
+    this.beforeEach(async function () {
+      await nftAuction
+        .connect(user2)
+        .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
+          value: underBid,
+        });
+    });
+    it("should transfer nft to whitelisted early bidder", async function () {
+      await nftAuction
+        .connect(user2)
+        .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
+          value: buyNowPrice,
+        });
+      await nftAuction.connect(user1).createSale(
+        erc721.address,
+        tokenId,
+        zeroAddress,
+        buyNowPrice,
+        user2.address, //whitelisted buyer
+        emptyFeeRecipients,
+        emptyFeePercentages
+      );
+
+      expect(await erc721.ownerOf(tokenId)).to.equal(user2.address);
+    });
+    it("should revert early bid from non whitelisted buyer", async function () {
+      await nftAuction
+        .connect(user3)
+        .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
+          value: buyNowPrice,
+        });
+      await nftAuction.connect(user1).createSale(
+        erc721.address,
+        tokenId,
+        zeroAddress,
+        buyNowPrice,
+        user2.address, //whitelisted buyer
+        emptyFeeRecipients,
+        emptyFeePercentages
+      );
+      result = await nftAuction.nftContractAuctions(erc721.address, tokenId);
+      expect(result.nftHighestBidder).to.be.equal(zeroAddress);
+    });
+    it("should  allow early underbid from whitelisted buyer", async function () {
+      await nftAuction.connect(user1).createSale(
+        erc721.address,
+        tokenId,
+        zeroAddress,
+        buyNowPrice,
+        user2.address, //whitelisted buyer
+        emptyFeeRecipients,
+        emptyFeePercentages
+      );
+      result = await nftAuction.nftContractAuctions(erc721.address, tokenId);
+      expect(result.nftHighestBidder).to.be.equal(user2.address);
+    });
+  });
 });

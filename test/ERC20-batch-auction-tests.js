@@ -4,6 +4,7 @@ const { BigNumber } = require("ethers");
 const { network } = require("hardhat");
 
 const tokenIdMaster = 1;
+const batchNFTs = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 const minPrice = 10000;
 const newPrice = 15000;
@@ -11,7 +12,6 @@ const buyNowPrice = 100000;
 const tokenBidAmount = 25000;
 const tokenAmount = 50000;
 const auctionBidPeriod = 106400; //seconds
-const layers = [2, 3, 4, 5, 6, 7, 8, 9, 10];
 const zeroAddress = "0x0000000000000000000000000000000000000000";
 const zeroERC20Tokens = 0;
 const emptyFeeRecipients = [];
@@ -32,7 +32,7 @@ describe("Batch Auctions with ERC20 Tokens", function () {
   let user3;
   let user4;
   let bidIncreasePercentage;
-  let MaxLayers;
+  let MaxbatchNFTs;
 
   //deploy mock erc721 token
   beforeEach(async function () {
@@ -43,9 +43,8 @@ describe("Batch Auctions with ERC20 Tokens", function () {
 
     erc721 = await ERC721.deploy("my mockables", "MBA");
     await erc721.deployed();
-    await erc721.mint(user1.address, tokenIdMaster);
-    for (let i = 0; i < layers.length; i++) {
-      await erc721.mint(user1.address, layers[i]);
+    for (let i = 0; i < batchNFTs.length; i++) {
+      await erc721.mint(user1.address, batchNFTs[i]);
     }
 
     erc20 = await ERC20.deploy("Mock ERC20", "MER");
@@ -68,17 +67,15 @@ describe("Batch Auctions with ERC20 Tokens", function () {
       .connect(user1)
       .createDefaultBatchNftAuction(
         erc721.address,
-        tokenIdMaster,
+        batchNFTs,
         erc20.address,
         minPrice,
         buyNowPrice,
-        layers,
         emptyFeeRecipients,
         emptyFeePercentages
       );
-    expect(await erc721.ownerOf(tokenIdMaster)).to.equal(nftAuction.address);
-    for (let i = 0; i < layers.length; i++) {
-      expect(await erc721.ownerOf(layers[i])).to.equal(nftAuction.address);
+    for (let i = 0; i < batchNFTs.length; i++) {
+      expect(await erc721.ownerOf(batchNFTs[i])).to.equal(nftAuction.address);
     }
   });
   it("should revert if minimum price equal 0", async function () {
@@ -87,11 +84,10 @@ describe("Batch Auctions with ERC20 Tokens", function () {
         .connect(user1)
         .createDefaultBatchNftAuction(
           erc721.address,
-          tokenIdMaster,
+          batchNFTs,
           erc20.address,
           0,
           buyNowPrice,
-          layers,
           emptyFeeRecipients,
           emptyFeePercentages
         )
@@ -104,11 +100,10 @@ describe("Batch Auctions with ERC20 Tokens", function () {
         .connect(user1)
         .createDefaultBatchNftAuction(
           erc721.address,
-          tokenIdMaster,
+          batchNFTs,
           erc20.address,
           minPrice,
           buyNowPrice,
-          layers,
           emptyFeeRecipients,
           emptyFeePercentages
         );
@@ -117,9 +112,8 @@ describe("Batch Auctions with ERC20 Tokens", function () {
       await nftAuction
         .connect(user1)
         .withdrawNft(erc721.address, tokenIdMaster);
-      expect(await erc721.ownerOf(tokenIdMaster)).to.equal(user1.address);
-      for (let i = 0; i < layers.length; i++) {
-        expect(await erc721.ownerOf(layers[i])).to.equal(user1.address);
+      for (let i = 0; i < batchNFTs.length; i++) {
+        expect(await erc721.ownerOf(batchNFTs[i])).to.equal(user1.address);
       }
     });
     it("should reset auction when NFT withdrawn", async function () {
@@ -167,8 +161,8 @@ describe("Batch Auctions with ERC20 Tokens", function () {
         .connect(user2)
         .settleAuction(erc721.address, tokenIdMaster);
       expect(await erc721.ownerOf(tokenIdMaster)).to.equal(user2.address);
-      for (let i = 0; i < layers.length; i++) {
-        expect(await erc721.ownerOf(layers[i])).to.equal(user2.address);
+      for (let i = 0; i < batchNFTs.length; i++) {
+        expect(await erc721.ownerOf(batchNFTs[i])).to.equal(user2.address);
       }
     });
   });
@@ -182,11 +176,10 @@ describe("Batch Auctions with ERC20 Tokens", function () {
         .connect(user1)
         .createBatchNftAuction(
           erc721.address,
-          tokenIdMaster,
+          batchNFTs,
           erc20.address,
           minPrice,
           buyNowPrice,
-          layers,
           auctionBidPeriod,
           bidIncreasePercentage,
           emptyFeeRecipients,
@@ -198,8 +191,8 @@ describe("Batch Auctions with ERC20 Tokens", function () {
         .connect(user1)
         .withdrawNft(erc721.address, tokenIdMaster);
       expect(await erc721.ownerOf(tokenIdMaster)).to.equal(user1.address);
-      for (let i = 0; i < layers.length; i++) {
-        expect(await erc721.ownerOf(layers[i])).to.equal(user1.address);
+      for (let i = 0; i < batchNFTs.length; i++) {
+        expect(await erc721.ownerOf(batchNFTs[i])).to.equal(user1.address);
       }
     });
     it("should reset auction when NFT withdrawn", async function () {
@@ -245,8 +238,8 @@ describe("Batch Auctions with ERC20 Tokens", function () {
         .connect(user2)
         .settleAuction(erc721.address, tokenIdMaster);
       expect(await erc721.ownerOf(tokenIdMaster)).to.equal(user2.address);
-      for (let i = 0; i < layers.length; i++) {
-        expect(await erc721.ownerOf(layers[i])).to.equal(user2.address);
+      for (let i = 0; i < batchNFTs.length; i++) {
+        expect(await erc721.ownerOf(batchNFTs[i])).to.equal(user2.address);
       }
       expect(await erc20.balanceOf(user1.address)).to.equal(
         BigNumber.from(tokenAmount + minPrice).toString()

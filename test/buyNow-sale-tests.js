@@ -11,6 +11,7 @@ const bidIncreasePercentage = 10;
 const zeroAddress = "0x0000000000000000000000000000000000000000";
 const emptyFeeRecipients = [];
 const emptyFeePercentages = [];
+const zeroERC20Tokens = 0;
 
 // Deploy and create a mock erc721 contract.
 
@@ -195,6 +196,35 @@ describe("Sale tests", function () {
       await expect(BigNumber.from(user1Bal).toString()).to.be.equal(
         user1Amount
       );
+    });
+  });
+  describe("Test early bids with sales", async function () {
+    let underBid = buyNowPrice - 1000;
+    let result;
+    this.beforeEach(async function () {
+      await nftAuction
+        .connect(user2)
+        .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
+          value: underBid,
+        });
+    });
+    it("should transfer nft to early bidder", async function () {
+      await nftAuction
+        .connect(user3)
+        .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
+          value: buyNowPrice,
+        });
+      await nftAuction.connect(user1).createSale(
+        erc721.address,
+        tokenId,
+        zeroAddress,
+        buyNowPrice,
+        zeroAddress, //whitelisted buyer
+        emptyFeeRecipients,
+        emptyFeePercentages
+      );
+
+      expect(await erc721.ownerOf(tokenId)).to.equal(user3.address);
     });
   });
 });
