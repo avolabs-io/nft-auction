@@ -291,5 +291,10 @@ describe("NFTAuction", function () {
           .updateMinimumPrice(erc721.address, tokenId, newMinPrice)
       ).to.be.revertedWith("Only the owner can call this function");
     });
+    it("should allow users to query NFT depositer", async function () {
+      expect(await nftAuction.ownerOfNFT(erc721.address, tokenId)).to.be.equal(
+        user1.address
+      );
+    });
   });
 });

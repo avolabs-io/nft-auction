@@ -41,7 +41,7 @@ module.exports = {
     gasPrice: 30,
     coinmarketcap: "9aacee3e-7c04-4978-8f93-63198c0fbfef",
   },
-  // uncomment this and run: npx hardhat run scripts/deploy.js --network rinkeby
+  // // uncomment this and run: npx hardhat run scripts/deploy.js --network rinkeby
   // networks: {
   //   rinkeby: {
   //     url: alchemyUrl,
