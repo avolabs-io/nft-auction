@@ -1209,7 +1209,6 @@ contract NFTAuction {
                 nftContractAuctions[_nftContractAddress][_tokenId]
                     .nftHighestBidder
             );
-            //  _resetBids(_nftContractAddress, _tokenId);
         }
     }
 
