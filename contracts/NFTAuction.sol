@@ -331,12 +331,14 @@ contract NFTAuction {
         view
         returns (bool)
     {
+        uint256 auctionEndTimestamp = nftContractAuctions[_nftContractAddress][
+            _tokenId
+        ]
+        .auctionEnd;
         //if the auctionEnd is set to 0, the auction is technically on-going, however
         //the minimum bid price (minPrice) has not yet been met.
-        return (nftContractAuctions[_nftContractAddress][_tokenId].auctionEnd ==
-            0 ||
-            block.timestamp <
-            nftContractAuctions[_nftContractAddress][_tokenId].auctionEnd);
+        return (auctionEndTimestamp == 0 ||
+            block.timestamp < auctionEndTimestamp);
     }
 
     //check if a bid has been made. This is applicable in the early bid scenario
@@ -357,10 +359,12 @@ contract NFTAuction {
         view
         returns (bool)
     {
+        uint256 minPrice = nftContractAuctions[_nftContractAddress][_tokenId]
+        .minPrice;
         return
-            nftContractAuctions[_nftContractAddress][_tokenId].minPrice > 0 &&
+            minPrice > 0 &&
             (nftContractAuctions[_nftContractAddress][_tokenId].nftHighestBid >=
-                nftContractAuctions[_nftContractAddress][_tokenId].minPrice);
+                minPrice);
     }
 
     //If the buy now price is set by the seller, check that the highest bid meets that price.
@@ -369,11 +373,12 @@ contract NFTAuction {
         view
         returns (bool)
     {
+        uint256 buyNowPrice = nftContractAuctions[_nftContractAddress][_tokenId]
+        .buyNowPrice;
         return
-            nftContractAuctions[_nftContractAddress][_tokenId].buyNowPrice >
-            0 &&
-            (nftContractAuctions[_nftContractAddress][_tokenId].nftHighestBid >=
-                nftContractAuctions[_nftContractAddress][_tokenId].buyNowPrice);
+            buyNowPrice > 0 &&
+            nftContractAuctions[_nftContractAddress][_tokenId].nftHighestBid >=
+            buyNowPrice;
     }
 
     /*
@@ -396,7 +401,6 @@ contract NFTAuction {
             10000;
         return (msg.value >= bidIncreaseAmount ||
             _tokenAmount >= bidIncreaseAmount);
-        // }
     }
 
     /*
@@ -524,15 +528,15 @@ contract NFTAuction {
         address _nftContractAddress,
         uint256 _tokenId
     ) internal view returns (uint256) {
-        if (
-            nftContractAuctions[_nftContractAddress][_tokenId]
-            .bidIncreasePercentage == 0
-        ) {
+        uint256 bidIncreasePercentage = nftContractAuctions[
+            _nftContractAddress
+        ][_tokenId]
+        .bidIncreasePercentage;
+
+        if (bidIncreasePercentage == 0) {
             return defaultBidIncreasePercentage;
         } else {
-            return
-                nftContractAuctions[_nftContractAddress][_tokenId]
-                    .bidIncreasePercentage;
+            return bidIncreasePercentage;
         }
     }
 
@@ -541,15 +545,15 @@ contract NFTAuction {
         view
         returns (uint256)
     {
-        if (
-            nftContractAuctions[_nftContractAddress][_tokenId]
-            .auctionBidPeriod == 0
-        ) {
+        uint256 auctionBidPeriod = nftContractAuctions[_nftContractAddress][
+            _tokenId
+        ]
+        .auctionBidPeriod;
+
+        if (auctionBidPeriod == 0) {
             return defaultAuctionBidPeriod;
         } else {
-            return
-                nftContractAuctions[_nftContractAddress][_tokenId]
-                    .auctionBidPeriod;
+            return auctionBidPeriod;
         }
     }
 
@@ -561,16 +565,17 @@ contract NFTAuction {
         view
         returns (address)
     {
-        if (
-            nftContractAuctions[_nftContractAddress][_tokenId].nftRecipient ==
-            address(0)
-        ) {
+        address nftRecipient = nftContractAuctions[_nftContractAddress][
+            _tokenId
+        ]
+        .nftRecipient;
+
+        if (nftRecipient == address(0)) {
             return
                 nftContractAuctions[_nftContractAddress][_tokenId]
                     .nftHighestBidder;
         } else {
-            return
-                nftContractAuctions[_nftContractAddress][_tokenId].nftRecipient;
+            return nftRecipient;
         }
     }
 
@@ -1045,7 +1050,7 @@ contract NFTAuction {
         address _erc20Token,
         uint256 _tokenAmount
     )
-        public
+        external
         payable
         auctionOngoing(_nftContractAddress, _tokenId)
         onlyApplicableBuyer(_nftContractAddress, _tokenId)
@@ -1092,6 +1097,7 @@ contract NFTAuction {
     ) internal {
         if (_isBuyNowPriceMet(_nftContractAddress, _tokenId)) {
             _transferNftAndPaySeller(_nftContractAddress, _tokenId);
+            return;
         }
         //min price not set, nft not up for auction yet
         if (_isMinimumBidMade(_nftContractAddress, _tokenId)) {
@@ -1279,19 +1285,13 @@ contract NFTAuction {
             _nftHighestBid
         );
         //reset bid and transfer nft last to avoid reentrancy
-        if (
-            nftContractAuctions[_nftContractAddress][_tokenId]
-            .batchTokenIds
-            .length > 0
-        ) {
-            for (
-                uint256 i = 0;
-                i <
-                nftContractAuctions[_nftContractAddress][_tokenId]
-                .batchTokenIds
-                .length;
-                i++
-            ) {
+        uint256 numberOfTokens = nftContractAuctions[_nftContractAddress][
+            _tokenId
+        ]
+        .batchTokenIds
+        .length;
+        if (numberOfTokens > 0) {
+            for (uint256 i = 0; i < numberOfTokens; i++) {
                 IERC721(_nftContractAddress).transferFrom(
                     address(this),
                     _nftRecipient,
@@ -1365,9 +1365,7 @@ contract NFTAuction {
         ]
         .ERC20Token;
         if (_isERC20Auction(auctionERC20Token)) {
-            IERC20 erc20Token = IERC20(auctionERC20Token);
-            erc20Token.approve(address(this), _amount);
-            erc20Token.safeTransferFrom(address(this), _recipient, _amount);
+            IERC20(auctionERC20Token).transfer(_recipient, _amount);
         } else {
             // attempt to send the funds to the recipient
             (bool success, ) = payable(_recipient).call{value: _amount}(
@@ -1376,7 +1374,7 @@ contract NFTAuction {
                 ""
             );
             // if it failed, update their credit balance so they can pull it later
-            if (success == false) {
+            if (!success) {
                 failedTransferCredits[_recipient] =
                     failedTransferCredits[_recipient] +
                     _amount;
@@ -1407,19 +1405,13 @@ contract NFTAuction {
         minimumBidNotMade(_nftContractAddress, _tokenId)
         onlyNftSeller(_nftContractAddress, _tokenId)
     {
-        if (
-            nftContractAuctions[_nftContractAddress][_tokenId]
-            .batchTokenIds
-            .length > 0
-        ) {
-            for (
-                uint256 i = 0;
-                i <
-                nftContractAuctions[_nftContractAddress][_tokenId]
-                .batchTokenIds
-                .length;
-                i++
-            ) {
+        uint256 numberOfTokens = nftContractAuctions[_nftContractAddress][
+            _tokenId
+        ]
+        .batchTokenIds
+        .length;
+        if (numberOfTokens > 0) {
+            for (uint256 i = 0; i < numberOfTokens; i++) {
                 IERC721(_nftContractAddress).transferFrom(
                     address(this),
                     nftContractAuctions[_nftContractAddress][_tokenId]
