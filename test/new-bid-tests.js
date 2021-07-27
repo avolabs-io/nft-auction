@@ -358,4 +358,80 @@ describe("NFTAuction Bids", function () {
       );
     });
   });
+  describe("Test make bid attacks", function () {
+    let Attacker;
+    let attack;
+    beforeEach(async function () {
+      Attacker = await ethers.getContractFactory("attackerContract");
+      attack = await Attacker.deploy();
+      await attack.deployed();
+      attack.setAuctionContract(nftAuction.address);
+      attack.connect(user1).deposit({ value: 100000 });
+      await nftAuction
+        .connect(user1)
+        .createNewNftAuction(
+          erc721.address,
+          tokenId,
+          zeroAddress,
+          minPrice,
+          buyNowPrice,
+          auctionBidPeriod,
+          bidIncreasePercentage,
+          emptyFeeRecipients,
+          emptyFeePercentages
+        );
+    });
+    it("should allow user to still bid after attack contract reverts in receive method", async function () {
+      attack.bidOnAuction(erc721.address, tokenId, minPrice);
+      let result = await nftAuction.nftContractAuctions(
+        erc721.address,
+        tokenId
+      );
+      expect(result.nftHighestBidder).to.be.equal(attack.address);
+      await nftAuction
+        .connect(user2)
+        .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
+          value: buyNowPrice,
+        });
+      expect(await erc721.ownerOf(tokenId)).to.equal(user2.address);
+      let attackBal = await attack.balanceOfContract();
+      expect(attackBal.toString()).to.be.equal(
+        BigNumber.from(99900).toString()
+      );
+      await expect(attack.withdrawFailed()).to.be.revertedWith(
+        "withdraw failed"
+      );
+      attackBal = await attack.balanceOfContract();
+      expect(attackBal.toString()).to.be.equal(
+        BigNumber.from(99900).toString()
+      );
+      attack.setRequire(true);
+      await attack.withdrawFailed();
+      attackBal = await attack.balanceOfContract();
+      expect(attackBal.toString()).to.be.equal(
+        BigNumber.from(100000).toString()
+      );
+    });
+    it("should not allow attack contract to withdraw more than once", async function () {
+      attack.bidOnAuction(erc721.address, tokenId, minPrice - 2);
+      let result = await nftAuction.nftContractAuctions(
+        erc721.address,
+        tokenId
+      );
+      expect(result.nftHighestBidder).to.be.equal(attack.address);
+      expect(result.auctionEnd.toString()).to.be.equal(
+        BigNumber.from(0).toString()
+      );
+      attack.setRequire(true);
+      let attackBal = await attack.balanceOfContract();
+      expect(attackBal.toString()).to.be.equal(
+        BigNumber.from(99902).toString()
+      );
+      await attack.withdraw();
+      attackBal = await attack.balanceOfContract();
+      expect(attackBal.toString()).to.be.equal(
+        BigNumber.from(99902).toString()
+      );
+    });
+  });
 });
