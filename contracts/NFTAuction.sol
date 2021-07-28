@@ -1541,7 +1541,7 @@ contract NFTAuction {
         }
         address owner = nftOwner[_nftContractAddress][_tokenId];
 
-        require(owner != address(0), "No NFT deposited");
+        require(owner != address(0), "NFT not deposited");
         return owner;
     }
 

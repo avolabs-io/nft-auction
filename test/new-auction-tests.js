@@ -296,6 +296,11 @@ describe("NFTAuction", function () {
         user1.address
       );
     });
+    it("should revert users querying undeposited NFT ", async function () {
+      await expect(nftAuction.ownerOfNFT(erc721.address, 7)).to.be.revertedWith(
+        "NFT not deposited"
+      );
+    });
     it("should not allow user to withdraw 0 failedCredit Balance", async function () {
       await expect(
         nftAuction.connect(user3).withdrawAllFailedCredits()
