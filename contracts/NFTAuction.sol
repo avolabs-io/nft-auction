@@ -5,10 +5,8 @@ import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract NFTAuction {
-    using SafeERC20 for IERC20;
     mapping(address => mapping(uint256 => Auction)) public nftContractAuctions;
     mapping(address => mapping(uint256 => address)) public nftOwner;
     mapping(address => uint256) failedTransferCredits;
@@ -505,17 +503,6 @@ contract NFTAuction {
         return (_totalBid * (_percentage)) / 10000;
     }
 
-    /*
-     * If the buy now price is not set, send the default maximum value
-     */
-    function _getBuyNowPrice(uint256 _buyNowPrice)
-        internal
-        pure
-        returns (uint256)
-    {
-        return _buyNowPrice == 0 ? type(uint256).max : _buyNowPrice;
-    }
-
     /**********************************/
     /*╔══════════════════════════════╗
       ║             END              ║
@@ -601,7 +588,6 @@ contract NFTAuction {
             address(this),
             _tokenId
         );
-        nftOwner[_nftContractAddress][_tokenId] = msg.sender;
     }
 
     function _transferNftBatchToAuctionContract(
@@ -614,7 +600,10 @@ contract NFTAuction {
                 address(this),
                 _batchTokenIds[i]
             );
-            nftOwner[_nftContractAddress][_batchTokenIds[i]] = msg.sender;
+            if (i != 0) {
+                //Don't set the first one because we set this later as the NFTSeller parameter in the struct
+                nftOwner[_nftContractAddress][_batchTokenIds[i]] = msg.sender;
+            }
         }
         _reverseAndResetPreviousBid(_nftContractAddress, _batchTokenIds[0]);
         nftContractAuctions[_nftContractAddress][_batchTokenIds[0]]
@@ -666,7 +655,7 @@ contract NFTAuction {
         nftContractAuctions[_nftContractAddress][_tokenId]
             .feePercentages = _feePercentages;
         nftContractAuctions[_nftContractAddress][_tokenId]
-            .buyNowPrice = _getBuyNowPrice(_buyNowPrice);
+            .buyNowPrice = _buyNowPrice;
         nftContractAuctions[_nftContractAddress][_tokenId].minPrice = _minPrice;
         nftContractAuctions[_nftContractAddress][_tokenId].nftSeller = msg
             .sender;
@@ -1194,8 +1183,7 @@ contract NFTAuction {
             _tokenId
         ].ERC20Token;
         if (_isERC20Auction(auctionERC20Token)) {
-            IERC20 erc20Token = IERC20(auctionERC20Token);
-            erc20Token.safeTransferFrom(
+            IERC20(auctionERC20Token).transferFrom(
                 msg.sender,
                 address(this),
                 _tokenAmount
@@ -1546,7 +1534,14 @@ contract NFTAuction {
         view
         returns (address)
     {
+        address nftSeller = nftContractAuctions[_nftContractAddress][_tokenId]
+            .nftSeller;
+        if (nftSeller != address(0)) {
+            return nftSeller;
+        }
         address owner = nftOwner[_nftContractAddress][_tokenId];
+
+        require(owner != address(0), "No NFT deposited");
         return owner;
     }
 
