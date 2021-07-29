@@ -140,6 +140,9 @@ describe("Batch Auction", function () {
       expect(await erc721.ownerOf(tokenIdMaster)).to.equal(user1.address);
       for (let i = 0; i < batchNFTs.length; i++) {
         expect(await erc721.ownerOf(batchNFTs[i])).to.equal(user1.address);
+        await expect(
+          nftAuction.ownerOfNFT(erc721.address, batchNFTs[i])
+        ).to.be.revertedWith("NFT not deposited");
       }
     });
     it("should reset auction when NFT withdrawn", async function () {

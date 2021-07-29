@@ -1269,17 +1269,18 @@ contract NFTAuction {
             _nftHighestBid
         );
         //reset bid and transfer nft last to avoid reentrancy
-        uint256 numberOfTokens = nftContractAuctions[_nftContractAddress][
-            _tokenId
-        ].batchTokenIds.length;
+        uint256[] memory batchTokenIds = nftContractAuctions[
+            _nftContractAddress
+        ][_tokenId].batchTokenIds;
+        uint256 numberOfTokens = batchTokenIds.length;
         if (numberOfTokens > 0) {
             for (uint256 i = 0; i < numberOfTokens; i++) {
                 IERC721(_nftContractAddress).transferFrom(
                     address(this),
                     _nftRecipient,
-                    nftContractAuctions[_nftContractAddress][_tokenId]
-                        .batchTokenIds[i]
+                    batchTokenIds[i]
                 );
+                nftOwner[_nftContractAddress][batchTokenIds[i]] = address(0);
             }
         } else {
             IERC721(_nftContractAddress).transferFrom(
@@ -1382,18 +1383,19 @@ contract NFTAuction {
         minimumBidNotMade(_nftContractAddress, _tokenId)
         onlyNftSeller(_nftContractAddress, _tokenId)
     {
-        uint256 numberOfTokens = nftContractAuctions[_nftContractAddress][
-            _tokenId
-        ].batchTokenIds.length;
+        uint256[] memory batchTokenIds = nftContractAuctions[
+            _nftContractAddress
+        ][_tokenId].batchTokenIds;
+        uint256 numberOfTokens = batchTokenIds.length;
         if (numberOfTokens > 0) {
             for (uint256 i = 0; i < numberOfTokens; i++) {
                 IERC721(_nftContractAddress).transferFrom(
                     address(this),
                     nftContractAuctions[_nftContractAddress][_tokenId]
                         .nftSeller,
-                    nftContractAuctions[_nftContractAddress][_tokenId]
-                        .batchTokenIds[i]
+                    batchTokenIds[i]
                 );
+                nftOwner[_nftContractAddress][batchTokenIds[i]] = address(0);
             }
         } else {
             IERC721(_nftContractAddress).transferFrom(
