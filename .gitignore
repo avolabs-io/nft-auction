@@ -6,3 +6,4 @@ artifacts
 coverage
 coverage.json
 secretsManager.js
+.DS_Store
