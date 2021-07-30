@@ -20,7 +20,7 @@ Smart contracts that allow the flexible auction of NFTs
 
 ## outBID Auctions
 
-This repository contains the smart contracts source code outBID Auction Protocol. The repository uses Hardhat as development enviroment for compilation, testing and deployment tasks.
+This repository contains the smart contracts source code for the outBID Auction Protocol (name subject to change). The repository uses Hardhat as development enviroment for compilation, testing and deployment tasks.
 
 ## How does the outBID auction functionality work?
 
