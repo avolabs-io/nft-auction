@@ -31,7 +31,7 @@ The open source smart contract can be easily used in a permissionless and flexib
 - Create an auction for their single NFT and customize their auction by specifying the following:
   - The accepted payment type (ETH or any ERC20 token)
   - The minimum price of the auction (when this is met, the auction begins and users have a specific time to make a subsequent higher bid). If the buy now price is also set, the minimum price cannot be greater than 80% of the buy now price.
-  - A buy now price, which when met by a buyer will automatically conclude the auction. The seller can set this value to zero, in which case the auction will only end when the minimum price is met, and the auction bid period has concluded.
+  - A buy now price, which when met by a buyer will automatically conclude the auction. The seller can set this value to zero, in which case the auction will only end when the minimum price is met and the auction bid period has concluded.
   - The auction bid period, which specifies the amount of time the auction will last after the minimum price is met. Every time a higher bid is then met, the auction will continue again for this time. For example, if auction bid period is set to x, and the minimum price is met at time T0, the auction will conclude at time T0+x. However, if at time T1 (where T0 < T1 < T0+x) a higher bid is made by another bidder, then the auction end time will update to be at time T1 +x.
   - A bid increase percentage (specified in basis points of 10000), which determines the amount a bidder must deposit in order to become the highest bidder. Therefore, if a bid of X amount is made, the next bidder must make a bid of X + ((X\*bid increase percentage)/10000).
   - An array of fee recipient addresses who will receive a percentage of the selling price of an auction when the auction is concluded.
@@ -51,7 +51,7 @@ The open source smart contract can be easily used in a permissionless and flexib
   - The amount of the bid (in either ETH or ERC20 Token as specified by the NFT seller). The bidder must make a bid that is higher by the bid increase percentage if another bid has already been made. However if this is met the bidder does not have to make a bid higher than the minimum price set by the seller(in this case, the auction would not start). Therefore, if no bid has been made on auction, the bidder can specify any amount.
   - The user can also make a custom bid and specify the NFT recipient who will receive the NFT or batch of NFTs if their bid is successful.
 - Purchase an NFT or batch of NFTs put up for sale by specifying the following:
-  - The amount of ERC20 Token or ETH (as specified by the seller). In this scenario, the purchaser can make an underbid of the buy now price, which will not conclude the sale. In this case, the amount sent by the purchaser must be the default percentage higher than the previous underbid. If the purchaser specifies an amount equal to or greater than the buy now price, the sale is concluded and the NFT and purchase amount are transferred.
+  - The amount of ERC20 Token or ETH (as specified by the seller). In this scenario, the purchaser can make an underbid of the buy now price, which will not conclude the sale. The amount sent by the purchaser must then be the default percentage higher than the previous underbid. If the purchaser specifies an amount equal to or greater than the buy now price, the sale is concluded and the NFT and purchase amount are transferred.
 
 Users can also make early bids on single NFTs. This allows users to bid on an NFT even if the owner has not yet set it for auction or sale. The user can only specify an early bid in an ETH amount.
 
@@ -62,13 +62,14 @@ Sellers can:
 - Withdraw their NFT or batch of NFTs if the minimum price of the auction has not yet been met, or at anytime when put up for sale as long as the buy now price has not yet been met (in this case, the seller would not be the owner of the NFT as it would be tranferred to the highest bidder or their specified recipient).
 - Update the whitelisted buyer in the case of a sale.
 - Update the minimum price of the auction. This can only be done if no bid has been made that already exceeds the original minimum price. The new minimum price is still limited to 80% of the buy now price if set. if an underbid has been made on auction, and this update would mean that the minimum price is met by that underbid, then the auction would begin.
-- Update the buy now price of the auction or sale. In the case of an auction the buy now price cannot be set to an amount which would make the minimum price greater thna 80% of the buy now price. If a bid has been made on auction or sale, and this update would mean that this bid now meets the buy now price, then the auction or sale would be concluded and the NFT and bid amount would be distributed accordingly.
+- Update the buy now price of the auction or sale. In the case of an auction the buy now price cannot be set to an amount which would make the minimum price greater than 80% of the buy now price. If a bid has been made on an auction or sale, and this update would mean that this bid now meets the buy now price, then the auction or sale would be concluded and the NFT and bid amount would be distributed accordingly.
 - Take the highest bid amount and conclude the auction or sale.
   Bidders can:
 - Withdraw their bid on auction or sale if the minimum price of the auction has not been met, or in the case of an underbid on a sale.
-  In the case of an auction where the auction bid period has expired (in the case where the minimum bid has been made). Then any user can settle the auction and distribute the bid and NFT to the respective seller and recipient.
-  Any user can also query the owner of a deposited NFT.
-  In the case where the distribution of a bid amount has failed, the recipient of that amount can reclaim their failed credits.
+
+* In the case of an auction where the auction bid period has expired (where the minimum bid has been met). Then any user can settle the auction and distribute the bid and NFT to the respective seller and recipient.
+* Any user can also query the owner of a deposited NFT.
+* In the case where the distribution of a bid amount has failed, the recipient of that amount can reclaim their failed credits.
 
 ## Development
 
