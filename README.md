@@ -64,7 +64,9 @@ Sellers can:
 - Update the minimum price of the auction. This can only be done if no bid has been made that already exceeds the original minimum price. The new minimum price is still limited to 80% of the buy now price if set. if an underbid has been made on auction, and this update would mean that the minimum price is met by that underbid, then the auction would begin.
 - Update the buy now price of the auction or sale. In the case of an auction the buy now price cannot be set to an amount which would make the minimum price greater than 80% of the buy now price. If a bid has been made on an auction or sale, and this update would mean that this bid now meets the buy now price, then the auction or sale would be concluded and the NFT and bid amount would be distributed accordingly.
 - Take the highest bid amount and conclude the auction or sale.
-  Bidders can:
+
+Bidders can:
+
 - Withdraw their bid on auction or sale if the minimum price of the auction has not been met, or in the case of an underbid on a sale.
 
 * In the case of an auction where the auction bid period has expired (where the minimum bid has been met). Then any user can settle the auction and distribute the bid and NFT to the respective seller and recipient.
