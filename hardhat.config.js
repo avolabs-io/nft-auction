@@ -6,6 +6,7 @@ const {
   rinkebyPrivateKey,
   alchemyUrl,
   etherscanApiKey,
+  coinmarketCapKey,
 } = require("./secretsManager.example.js");
 
 // This is a sample Hardhat task. To learn how to create your own go to
@@ -39,9 +40,9 @@ module.exports = {
     enabled: true,
     currency: "USD",
     gasPrice: 30,
-    coinmarketcap: "9aacee3e-7c04-4978-8f93-63198c0fbfef",
+    coinmarketcap: coinmarketCapKey,
   },
-  // // uncomment this and run: npx hardhat run scripts/deploy.js --network rinkeby
+  // // uncomment this and run: yarn deploy-rinkeby
   // networks: {
   //   rinkeby: {
   //     url: alchemyUrl,

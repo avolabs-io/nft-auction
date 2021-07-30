@@ -6,28 +6,34 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+/// @title An Auction Contract for bidding and selling single and batched NFTs
+/// @author Avo Labs GmbH
+/// @notice This contract can be used for auctioning any NFTs, and accepts any ERC20 token as payment
 contract NFTAuction {
     mapping(address => mapping(uint256 => Auction)) public nftContractAuctions;
     mapping(address => mapping(uint256 => address)) public nftOwner;
     mapping(address => uint256) failedTransferCredits;
-    //Each Auction is unique to each NFT (contract + id master pairing).
+    //Each Auction is unique to each NFT (contract + id pairing).
     struct Auction {
         //map token ID to
         uint256 minPrice;
         uint256 buyNowPrice;
-        uint256 auctionBidPeriod; //Length of time the auction is open in which a new bid can be made
+        uint256 auctionBidPeriod; //Increments the length of time the auction is open in which a new bid can be made after each bid.
         uint256 auctionEnd;
         uint256 nftHighestBid;
         uint256 bidIncreasePercentage;
-        uint256[] batchTokenIds;
+        uint256[] batchTokenIds; // The first token in the batch is used to identify the auction (contract + id pairing).
         uint32[] feePercentages;
         address nftHighestBidder;
         address nftSeller;
-        address whitelistedBuyer;
-        address nftRecipient;
-        address ERC20Token;
+        address whitelistedBuyer; //The seller can specify a whitelisted address for a sale (this is effectively a direct sale).
+        address nftRecipient; //The bidder can specify a recipient for the NFT if their bid is successful.
+        address ERC20Token; // The seller can specify an ERC20 token that can be used to bid or purchase the NFT.
         address[] feeRecipients;
     }
+    /*
+     * Default values that are used if not specified by the NFT seller.
+     */
     uint256 public defaultBidIncreasePercentage;
     uint256 public defaultAuctionBidPeriod;
     uint256 public minimumSettableIncreasePercentage;
@@ -147,7 +153,12 @@ contract NFTAuction {
         uint256 newBuyNowPrice
     );
     event HighestBidTaken(address nftContractAddress, uint256 tokenId);
-
+    /**********************************/
+    /*╔═════════════════════════════╗
+      ║             END             ║
+      ║            EVENTS           ║
+      ╚═════════════════════════════╝*/
+    /**********************************/
     /*╔═════════════════════════════╗
       ║          MODIFIERS          ║
       ╚═════════════════════════════╝*/
@@ -164,7 +175,9 @@ contract NFTAuction {
         require(_price > 0, "Price cannot be 0");
         _;
     }
-
+    /*
+     * The minimum price must be 80% of the buyNowPrice(if set).
+     */
     modifier minPriceDoesNotExceedLimit(
         uint256 _buyNowPrice,
         uint256 _minPrice
@@ -194,7 +207,10 @@ contract NFTAuction {
         );
         _;
     }
-
+    /*
+     * The bid amount was either equal the buyNowPrice or it must be higher than the previous
+     * bid by the specified bid increase percentage.
+     */
     modifier bidAmountMeetsBidRequirements(
         address _nftContractAddress,
         uint256 _tokenId,
@@ -232,7 +248,9 @@ contract NFTAuction {
         );
         _;
     }
-
+    /*
+     * NFTs in a batch must contain between 2 and 100 NFTs
+     */
     modifier batchWithinLimits(uint256 _batchTokenIdsLength) {
         require(
             _batchTokenIdsLength > 1 && _batchTokenIdsLength <= 100,
@@ -240,6 +258,10 @@ contract NFTAuction {
         );
         _;
     }
+    /*
+     * Payment is accepted if the payment is made in the ERC20 token or ETH specified by the seller.
+     * Early bids on NFTs not yet up for auction must be made in ETH.
+     */
     modifier paymentAccepted(
         address _nftContractAddress,
         uint256 _tokenId,
@@ -338,9 +360,11 @@ contract NFTAuction {
             block.timestamp < auctionEndTimestamp);
     }
 
-    //check if a bid has been made. This is applicable in the early bid scenario
-    //to ensure that if an auction is created after an early bid, the auction
-    //begins appropriately or is settled if the buy now price is met.
+    /*
+     * Check if a bid has been made. This is applicable in the early bid scenario
+     * to ensure that if an auction is created after an early bid, the auction
+     * begins appropriately or is settled if the buy now price is met.
+     */
     function _isABidMade(address _nftContractAddress, uint256 _tokenId)
         internal
         view
@@ -350,7 +374,9 @@ contract NFTAuction {
             .nftHighestBid > 0);
     }
 
-    //if the minPrice is set by the seller, check that the highest bid meets or exceeds that price.
+    /*
+     *if the minPrice is set by the seller, check that the highest bid meets or exceeds that price.
+     */
     function _isMinimumBidMade(address _nftContractAddress, uint256 _tokenId)
         internal
         view
@@ -364,7 +390,9 @@ contract NFTAuction {
                 minPrice);
     }
 
-    //If the buy now price is set by the seller, check that the highest bid meets that price.
+    /*
+     * If the buy now price is set by the seller, check that the highest bid meets that price.
+     */
     function _isBuyNowPriceMet(address _nftContractAddress, uint256 _tokenId)
         internal
         view
@@ -816,6 +844,11 @@ contract NFTAuction {
         );
     }
 
+    /*
+     * Create an auction for multiple NFTs in a batch.
+     * The first token in the batch is used as the identifier for the auction.
+     * Users must be aware of this tokenId when creating a batch auction.
+     */
     function createBatchNftAuction(
         address _nftContractAddress,
         uint256[] memory _batchTokenIds,
@@ -986,7 +1019,7 @@ contract NFTAuction {
     /**********************************/
     /*╔══════════════════════════════╗
       ║             END              ║
-      ║       WHITELIST SALES        ║
+      ║            SALES             ║
       ╚══════════════════════════════╝*/
     /**********************************/
 
@@ -996,8 +1029,8 @@ contract NFTAuction {
 
     /********************************************************************
      * Make bids with ETH or an ERC20 Token specified by the NFT seller.*
-     * Additionally, a whitelisted buyer can pay the asking price       *
-     * to conclude a whitelisted sale of an NFT.                        *
+     * Additionally, a buyer can pay the asking price to conclude a sale*
+     * of an NFT.                                                      *
      ********************************************************************/
 
     function _makeBid(
@@ -1519,6 +1552,9 @@ contract NFTAuction {
         }
     }
 
+    /*
+     * The NFT seller can opt to end an auction by taking the current highest bid.
+     */
     function takeHighestBid(address _nftContractAddress, uint256 _tokenId)
         external
         onlyNftSeller(_nftContractAddress, _tokenId)
@@ -1531,6 +1567,9 @@ contract NFTAuction {
         emit HighestBidTaken(_nftContractAddress, _tokenId);
     }
 
+    /*
+     * Query the owner of an NFT deposited for auction
+     */
     function ownerOfNFT(address _nftContractAddress, uint256 _tokenId)
         external
         view
@@ -1547,6 +1586,9 @@ contract NFTAuction {
         return owner;
     }
 
+    /*
+     * If the transfer of a bid has failed, allow the recipient to reclaim their amount later.
+     */
     function withdrawAllFailedCredits() external {
         uint256 amount = failedTransferCredits[msg.sender];
 
