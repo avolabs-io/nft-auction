@@ -3,38 +3,6 @@ Smart contracts that allow the flexible auction of NFTs
 
 [![Tests pass](https://github.com/avolabs-io/nft-auction/actions/workflows/main.yml/badge.svg)](https://github.com/avolabs-io/nft-auction/actions/workflows/main.yml)
 
-## Development
-
-First clone this repository and enter the directory.
-
-Install dependencies:
-
-```
-$ yarn
-```
-
-## Testing
-
-We use [Hardhat](https://hardhat.dev) and [hardhat-deploy](https://github.com/wighawag/hardhat-deploy)
-
-To run integration tests:
-
-```sh
-$ yarn test
-```
-
-To run coverage:
-
-```sh
-$ yarn coverage
-```
-
-To deploy to Rinkeby:
-create a secretManager.js containing the required private keys then run:
-
-```sh
-$ yarn deploy-rinkeby
-```
 
 ## zNFT Auctions
 
@@ -91,6 +59,38 @@ Bidders can:
 * Any user can also query the owner of a deposited NFT.
 * In the case where the distribution of a bid amount has failed, the recipient of that amount can reclaim their failed credits.
 
+## Development
+
+First clone this repository and enter the directory.
+
+Install dependencies:
+
+```
+$ yarn
+```
+
+## Testing
+
+We use [Hardhat](https://hardhat.dev) and [hardhat-deploy](https://github.com/wighawag/hardhat-deploy)
+
+To run integration tests:
+
+```sh
+$ yarn test
+```
+
+To run coverage:
+
+```sh
+$ yarn coverage
+```
+
+To deploy to Rinkeby:
+create a secretManager.js containing the required private keys then run:
+
+```sh
+$ yarn deploy-rinkeby
+```
 
 ## Test Coverage
 
