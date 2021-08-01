@@ -1,5 +1,4 @@
-# nft-auction
-
+# zNFT
 Smart contracts that allow the flexible auction of NFTs
 
 [![Tests pass](https://github.com/avolabs-io/nft-auction/actions/workflows/main.yml/badge.svg)](https://github.com/avolabs-io/nft-auction/actions/workflows/main.yml)
@@ -18,11 +17,11 @@ Smart contracts that allow the flexible auction of NFTs
   | All files                 | 100        | 100        | 100        | 100        |                  |
   | ------------------------- | ---------- | ---------- | ---------- | ---------- | ---------------- |
 
-## outBID Auctions
+## zNFT Auctions
 
-This repository contains the smart contracts source code for the outBID Auction Protocol (name subject to change). The repository uses Hardhat as development enviroment for compilation, testing and deployment tasks.
+This repository contains the smart contracts source code for the zNFT Auction Protocol (name subject to change). The repository uses Hardhat as development enviroment for compilation, testing and deployment tasks.
 
-## How does the outBID auction functionality work?
+## How does the zNFT auction functionality work?
 
 The open source smart contract can be easily used in a permissionless and flexible manner to auction (or simply buy/sell) NFTs. Sellers and bidders are able to make customized auctions and bids that allow for a holistic NFT auction/sale mechanism.
 
@@ -45,7 +44,7 @@ The open source smart contract can be easily used in a permissionless and flexib
   - An array of fee recipient addresses who will receive a percentage of the selling price of an auction when the auction is concluded.
   - An array of fee percentages (each in basis points of 10000) which must match the number of fee recipients. This determines the split of the selling price for each fee recipient.
 
-# Bidders can perform the following actions using the outBID auction contract:
+# Bidders can perform the following actions using the zNFT auction contract:
 
 - Make a bid on an NFT or batch of NFTs put up for auction by specifying the following:
   - The amount of the bid (in either ETH or ERC20 Token as specified by the NFT seller). The bidder must make a bid that is higher by the bid increase percentage if another bid has already been made. However if this is met the bidder does not have to make a bid higher than the minimum price set by the seller(in this case, the auction would not start). Therefore, if no bid has been made on auction, the bidder can specify any amount.
