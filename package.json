@@ -4,7 +4,8 @@
     "compile": "hardhat compile",
     "test": "hardhat test",
     "coverage": "hardhat coverage",
-    "deploy-rinkeby" : "npx hardhat run scripts/deploy.js --network rinkeby"
+    "deploy-rinkeby" : "npx hardhat run scripts/deploy.js --network rinkeby",
+    "verify" : "npx hardhat verify --network rinkeby"
   },
   "dependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
