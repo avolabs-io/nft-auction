@@ -12,6 +12,12 @@ This repository contains the smart contracts source code for the Unstoppable Auc
 
 The open source smart contract can be easily used in a permissionless and flexible manner to auction (or simply buy/sell) NFTs. Sellers and bidders are able to make customized auctions and bids that allow for a holistic NFT auction/sale mechanism.
 
+## Smart Contract bounty
+
+Although these smart contracts have been thoroughly tested, we cannot garuntee the absence of bugs. Please report any findings / attack vectors / gas optimizations to bounty@avolabs.io. There is a bounty payout 💰 for your reported findings, awarded at the sole discretion of the bounty sponsor (Async Art). These contracts are for the community and your help with be greatly appreciated by many. 
+
+Note that many factors such as the serverity of the bug, the sumbission of duplicates and the timliness of submission will be some of the factors invovled in determining the size of the applicable bounty. 
+ 
 # NFT sellers can perform the following actions to sell or auction their NFTs:
 
 - Create an auction for their single NFT and customize their auction by specifying the following:
