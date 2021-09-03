@@ -1,17 +1,23 @@
-# zNFT
+# Unstoppable Auctions
+
 Smart contracts that allow the flexible auction of NFTs
 
 [![Tests pass](https://github.com/avolabs-io/nft-auction/actions/workflows/main.yml/badge.svg)](https://github.com/avolabs-io/nft-auction/actions/workflows/main.yml)
 
+## Unstoppable Auctions
 
-## zNFT Auctions
+This repository contains the smart contracts source code for the Unstoppable Auction Protocol. The repository uses Hardhat as development enviroment for compilation, testing and deployment tasks.
 
-This repository contains the smart contracts source code for the zNFT Auction Protocol (name subject to change). The repository uses Hardhat as development enviroment for compilation, testing and deployment tasks.
-
-## How does the zNFT auction functionality work?
+## How does the Unstoppable Auction functionality work?
 
 The open source smart contract can be easily used in a permissionless and flexible manner to auction (or simply buy/sell) NFTs. Sellers and bidders are able to make customized auctions and bids that allow for a holistic NFT auction/sale mechanism.
 
+## Smart Contract bounty
+
+Although these smart contracts have been thoroughly tested, we cannot guarentee the absence of bugs. Please report any findings / attack vectors / gas optimizations to bounty@avolabs.io. There is a bounty payout 💰 for your reported findings, awarded at the sole discretion of the bounty sponsor (Async Art). These contracts are for the community and your help would be greatly appreciated by many. 
+
+Note that many factors such as the serverity of the bug, the submission of duplicates and the timeliness of the submission will be some of the factors involved in determining the size of the applicable bounty. 
+ 
 # NFT sellers can perform the following actions to sell or auction their NFTs:
 
 - Create an auction for their single NFT and customize their auction by specifying the following:
@@ -31,7 +37,7 @@ The open source smart contract can be easily used in a permissionless and flexib
   - An array of fee recipient addresses who will receive a percentage of the selling price of an auction when the auction is concluded.
   - An array of fee percentages (each in basis points of 10000) which must match the number of fee recipients. This determines the split of the selling price for each fee recipient.
 
-# Bidders can perform the following actions using the zNFT auction contract:
+# Bidders can perform the following actions using the Unstoppable Auction contract:
 
 - Make a bid on an NFT or batch of NFTs put up for auction by specifying the following:
   - The amount of the bid (in either ETH or ERC20 Token as specified by the NFT seller). The bidder must make a bid that is higher by the bid increase percentage if another bid has already been made. However if this is met the bidder does not have to make a bid higher than the minimum price set by the seller(in this case, the auction would not start). Therefore, if no bid has been made on auction, the bidder can specify any amount.
@@ -86,11 +92,26 @@ $ yarn coverage
 ```
 
 To deploy to Rinkeby:
-create a secretManager.js containing the required private keys then run:
+create a secretManager.js containing the required private keys(see secretsManager.example.js) then run:
 
 ```sh
 $ yarn deploy-rinkeby
 ```
+
+To verify the auction contract run:
+
+```sh
+$ yarn verify-auction [AUCTION-CONTRACT-ADDRESS]
+```
+
+A verified version of the Auction contract on the Rinkeby network is available at address 0xa45e7eFceDB1BDF2a8eF480D21b0e5A005BCe4FF
+https://rinkeby.etherscan.io/address/0xa45e7eFceDB1BDF2a8eF480D21b0e5A005BCe4FF#code
+
+## For additional testing verified versions of a mock ERC721 token and a mock ERC20 token are available at:
+
+ERC721: https://rinkeby.etherscan.io/address/0x67129E31f965813dCCdB813b568AB208f78dd608#writeContract
+
+ERC20: https://rinkeby.etherscan.io/address/0x0fdBE02876F7D1B60BE4b2740f1Cd0254e626D7b#writeContract
 
 ## Test Coverage
 
