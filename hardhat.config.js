@@ -2,6 +2,8 @@ require("@nomiclabs/hardhat-waffle");
 require("hardhat-gas-reporter");
 require("solidity-coverage");
 require("@nomiclabs/hardhat-etherscan");
+require("hardhat-deploy");
+require("@nomiclabs/hardhat-ethers");
 const {
   rinkebyPrivateKey,
   alchemyUrl,
@@ -42,7 +44,11 @@ module.exports = {
     gasPrice: 30,
     coinmarketcap: coinmarketCapKey,
   },
-  // // uncomment this and run: yarn deploy-rinkeby
+  namedAccounts: {
+    deployer: 0,
+  },
+
+  //uncomment this and run: yarn deploy-rinkeby
   // networks: {
   //   rinkeby: {
   //     url: alchemyUrl,
