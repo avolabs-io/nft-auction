@@ -4,7 +4,7 @@
     "compile": "hardhat compile",
     "test": "hardhat test",
     "coverage": "hardhat coverage",
-    "deploy-rinkeby": "hardhat deploy --network rinkeby"
+    "deploy-rinkeby": "hardhat deploy --network rinkeby",
     "verify" : "npx hardhat verify --network rinkeby"
   },
   "dependencies": {
