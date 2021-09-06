@@ -180,7 +180,7 @@ describe("NFTAuction Bids", function () {
               value: minPrice,
             }
           )
-      ).to.be.revertedWith("cannot specify 0 address");
+      ).to.be.revertedWith("Cannot specify 0 address");
     });
 
     it("should allow bidder to buy NFT by meeting buyNowPrice", async function () {

@@ -99,7 +99,7 @@ describe("Whitelist sale tests", function () {
           .makeBid(erc721.address, tokenId, zeroAddress, 0, {
             value: buyNowPrice,
           })
-      ).to.be.revertedWith("only the whitelisted buyer can bid on this NFT");
+      ).to.be.revertedWith("Only the whitelisted buyer");
       expect(await erc721.ownerOf(tokenId)).to.equal(nftAuction.address);
     });
     //test buyer can't purchase nft below the minimum price
@@ -129,7 +129,7 @@ describe("Whitelist sale tests", function () {
           .makeBid(erc721.address, tokenId, zeroAddress, 0, {
             value: buyNowPrice,
           })
-      ).to.be.revertedWith("only the whitelisted buyer can bid on this NFT");
+      ).to.be.revertedWith("Only the whitelisted buyer");
       await nftAuction
         .connect(user3)
         .makeBid(erc721.address, tokenId, zeroAddress, 0, {
@@ -163,7 +163,7 @@ describe("Whitelist sale tests", function () {
         nftAuction
           .connect(user2)
           .updateWhitelistedBuyer(erc721.address, tokenId, user3.address)
-      ).to.be.revertedWith("Only the owner can call this function");
+      ).to.be.revertedWith("Only nft seller");
     });
     it("should not allow user to update min price for a sale", async function () {
       let newMinPrice = 15000;

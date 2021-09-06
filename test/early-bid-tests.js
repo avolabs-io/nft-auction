@@ -108,7 +108,7 @@ describe("Early bid tests", function () {
       nftAuction
         .connect(user2)
         .updateMinimumPrice(erc721.address, tokenId, newMinPrice)
-    ).to.be.revertedWith("Only the owner can call this function");
+    ).to.be.revertedWith("Only nft seller");
   });
   it("should revert early bid if whitelist sale created for different user", async function () {
     await nftAuction.connect(user1).createSale(

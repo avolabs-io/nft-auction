@@ -400,9 +400,7 @@ describe("End to end auction tests", function () {
             bidIncreaseByMinPercentage3,
             user3.address
           )
-      ).to.be.revertedWith(
-        "Bid to be made in quantities of specified token or eth"
-      );
+      ).to.be.revertedWith("Bid to be in specified ERC20/Eth");
       await expect(
         nftAuction
           .connect(user3)
@@ -416,9 +414,7 @@ describe("End to end auction tests", function () {
               value: bidIncreaseByMinPercentage3,
             }
           )
-      ).to.be.revertedWith(
-        "Bid to be made in quantities of specified token or eth"
-      );
+      ).to.be.revertedWith("Bid to be in specified ERC20/Eth");
       await nftAuction
         .connect(user3)
         .makeBid(
