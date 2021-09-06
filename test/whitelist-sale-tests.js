@@ -100,7 +100,11 @@ describe("Whitelist sale tests", function () {
             value: buyNowPrice,
           })
       ).to.be.revertedWith("Only the whitelisted buyer");
-      expect(await erc721.ownerOf(tokenId)).to.equal(nftAuction.address);
+      let result = await nftAuction.nftContractAuctions(
+        erc721.address,
+        tokenId
+      );
+      expect(result.nftSeller).to.equal(user1.address);
     });
     //test buyer can't purchase nft below the minimum price
     it("should allow whitelist buyer to bid below sale price", async function () {
@@ -146,7 +150,6 @@ describe("Whitelist sale tests", function () {
       await nftAuction
         .connect(user1)
         .updateWhitelistedBuyer(erc721.address, tokenId, user3.address);
-      expect(await erc721.ownerOf(tokenId)).to.equal(nftAuction.address);
       let result = await nftAuction.nftContractAuctions(
         erc721.address,
         tokenId
