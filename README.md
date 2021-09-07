@@ -106,6 +106,9 @@ $ yarn verify-auction [AUCTION-CONTRACT-ADDRESS]
 A verified version of the Auction contract on the Rinkeby network is available at address 0xa45e7eFceDB1BDF2a8eF480D21b0e5A005BCe4FF
 https://rinkeby.etherscan.io/address/0xa45e7eFceDB1BDF2a8eF480D21b0e5A005BCe4FF#code
 
+verified version V1 Contract: 0x299285189203a8e8e37bad6F1A312953FEdd384d
+https://rinkeby.etherscan.io/address/0x299285189203a8e8e37bad6F1A312953FEdd384d#code
+
 ## For additional testing verified versions of a mock ERC721 token and a mock ERC20 token are available at:
 
 ERC721: https://rinkeby.etherscan.io/address/0x67129E31f965813dCCdB813b568AB208f78dd608#writeContract
