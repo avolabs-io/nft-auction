@@ -1,4 +1,4 @@
-# Unstoppable Auctions
+# Unstoppable Auctions V1
 
 Smart contracts that allow the flexible auction of NFTs
 
@@ -14,10 +14,10 @@ The open source smart contract can be easily used in a permissionless and flexib
 
 ## Smart Contract bounty
 
-Although these smart contracts have been thoroughly tested, we cannot guarentee the absence of bugs. Please report any findings / attack vectors / gas optimizations to bounty@avolabs.io. There is a bounty payout 💰 for your reported findings, awarded at the sole discretion of the bounty sponsor (Async Art). These contracts are for the community and your help would be greatly appreciated by many. 
+Although these smart contracts have been thoroughly tested, we cannot guarentee the absence of bugs. Please report any findings / attack vectors / gas optimizations to bounty@avolabs.io. There is a bounty payout 💰 for your reported findings, awarded at the sole discretion of the bounty sponsor (Async Art). These contracts are for the community and your help would be greatly appreciated by many.
 
-Note that many factors such as the serverity of the bug, the submission of duplicates and the timeliness of the submission will be some of the factors involved in determining the size of the applicable bounty. 
- 
+Note that many factors such as the serverity of the bug, the submission of duplicates and the timeliness of the submission will be some of the factors involved in determining the size of the applicable bounty.
+
 # NFT sellers can perform the following actions to sell or auction their NFTs:
 
 - Create an auction for their single NFT and customize their auction by specifying the following:
@@ -29,21 +29,20 @@ Note that many factors such as the serverity of the bug, the submission of dupli
   - An array of fee recipient addresses who will receive a percentage of the selling price of an auction when the auction is concluded.
   - An array of fee percentages (each in basis points of 10000) which must match the number of fee recipients. This determines the split of the selling price for each fee recipient.
 - Create a default auction, which accepts all of the above parameters except for the bid increase percentage and auction bid period. These values are defaulted to the following:
-- Create a batch NFT auction. These auctions can be customized as the above auctions for single NFTs, however the seller can specify an array of NFT token IDs (between 2 and 100 NFTs). The first token ID in the array is then used as the identifier of the auction.
-- Create a sale for a single NFT or a batch of NFTs by specifying the following for each sale:
+- Create a sale for a single NFT by specifying the following for each sale:
   - The accepted payment type (ETH or any ERC20 token)
   - The buy now price, which will conclude the sale when a buyer meets this price.
-  - A whitelisted buyer address, which, when specified, allows only this address to purchase this NFT or this batch of NFTs.
+  - A whitelisted buyer address, which, when specified, allows only this address to purchase the NFT.
   - An array of fee recipient addresses who will receive a percentage of the selling price of an auction when the auction is concluded.
   - An array of fee percentages (each in basis points of 10000) which must match the number of fee recipients. This determines the split of the selling price for each fee recipient.
 
 # Bidders can perform the following actions using the Unstoppable Auction contract:
 
-- Make a bid on an NFT or batch of NFTs put up for auction by specifying the following:
-  - The amount of the bid (in either ETH or ERC20 Token as specified by the NFT seller). The bidder must make a bid that is higher by the bid increase percentage if another bid has already been made. However if this is met the bidder does not have to make a bid higher than the minimum price set by the seller(in this case, the auction would not start). Therefore, if no bid has been made on auction, the bidder can specify any amount.
-  - The user can also make a custom bid and specify the NFT recipient who will receive the NFT or batch of NFTs if their bid is successful.
-- Purchase an NFT or batch of NFTs put up for sale by specifying the following:
-  - The amount of ERC20 Token or ETH (as specified by the seller). In this scenario, the purchaser can make an underbid of the buy now price, which will not conclude the sale. The amount sent by the purchaser must then be the default percentage higher than the previous underbid. If the purchaser specifies an amount equal to or greater than the buy now price, the sale is concluded and the NFT and purchase amount are transferred.
+- Make a bid on an NFT put up for auction by specifying the following:
+  - The amount of the bid (in either ETH or ERC20 Token as specified by the NFT seller). The bidder must make a bid that is higher by the bid increase percentage if another bid has already been made. However if this is met the bidder does not have to make a bid higher than the minimum price set by the seller (in this case, the auction would not start). Therefore, if no bid has been made on auction, the bidder can specify any amount.
+  - The user can also make a custom bid and specify the NFT recipient who will receive the NFT if their bid is successful.
+- Purchase an NFT put up for sale by specifying the following:
+  - The amount of ERC20 Token or ETH (as specified by the seller). In this scenario, the purchaser can make an underbid of the buy now price, which will not conclude the sale. The amount sent by the bidder must then be the default percentage higher than the previous underbid. If the bidder specifies an amount equal to or greater than the buy now price, the sale is concluded and the NFT and purchase amount are transferred.
 
 Users can also make early bids on single NFTs. This allows users to bid on an NFT even if the owner has not yet set it for auction or sale. The user can only specify an early bid in an ETH amount.
 
@@ -51,9 +50,9 @@ Users can also make early bids on single NFTs. This allows users to bid on an NF
 
 Sellers can:
 
-- Withdraw their NFT or batch of NFTs if the minimum price of the auction has not yet been met, or at anytime when put up for sale as long as the buy now price has not yet been met (in this case, the seller would not be the owner of the NFT as it would be tranferred to the highest bidder or their specified recipient).
+- Withdraw their auction if the minimum price of the auction has not yet been met, or at anytime when put up for sale as long as the buy now price has not yet been met (in this case, the seller would not be the owner of the NFT as it would be tranferred to the highest bidder or their specified recipient).
 - Update the whitelisted buyer in the case of a sale.
-- Update the minimum price of the auction. This can only be done if no bid has been made that already exceeds the original minimum price. The new minimum price is still limited to 80% of the buy now price if set. if an underbid has been made on auction, and this update would mean that the minimum price is met by that underbid, then the auction would begin.
+- Update the minimum price of the auction. This can only be done if no bid has been made that already exceeds the original minimum price. The new minimum price is still limited to 80% of the buy now price if set. if an underbid has been made on the auction, and this update would mean that the minimum price is met by that underbid, then the auction would begin.
 - Update the buy now price of the auction or sale. In the case of an auction the buy now price cannot be set to an amount which would make the minimum price greater than 80% of the buy now price. If a bid has been made on an auction or sale, and this update would mean that this bid now meets the buy now price, then the auction or sale would be concluded and the NFT and bid amount would be distributed accordingly.
 - Take the highest bid amount and conclude the auction or sale.
 

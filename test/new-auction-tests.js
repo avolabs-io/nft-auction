@@ -261,7 +261,7 @@ describe("NFTAuction", function () {
       );
     });
 
-    it("should not allow non owner  to create auction", async function () {
+    it("should not allow non owner to create auction", async function () {
       await expect(
         nftAuction
           .connect(user2)
@@ -290,11 +290,6 @@ describe("NFTAuction", function () {
         BigNumber.from(0).toString()
       );
       expect(result.nftSeller).to.be.equal(zeroAddress);
-    });
-    it("should not allow other users to withdraw NFT", async function () {
-      await expect(
-        nftAuction.connect(user2).withdrawNft(erc721.address, tokenId)
-      ).to.be.revertedWith("Only nft seller");
     });
     it("should not allow other users to withdraw Auction", async function () {
       await expect(
