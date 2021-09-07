@@ -114,9 +114,7 @@ describe("Batch Auction", function () {
             emptyFeeRecipients,
             emptyFeePercentages
           )
-      ).to.be.revertedWith(
-        "Number of NFTs not applicable for batch sale/auction"
-      );
+      ).to.be.revertedWith("Number of NFTs not applicable");
     });
   });
   describe(" Default Batch Auction Bids and settlement tests", async function () {

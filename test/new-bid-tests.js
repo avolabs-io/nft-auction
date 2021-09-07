@@ -75,6 +75,29 @@ describe("NFTAuction Bids", function () {
         BigNumber.from(minPrice).toString()
       );
     });
+    it("Should transfer NFT to contract if bid meets min Price", async function () {
+      expect(await erc721.ownerOf(tokenId)).to.equal(user1.address);
+      await nftAuction
+        .connect(user2)
+        .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
+          value: minPrice,
+        });
+      expect(await erc721.ownerOf(tokenId)).to.equal(nftAuction.address);
+    });
+    it("should revert if owner transfer nft and minPrice is met", async function () {
+      await erc721.connect(user1).approve(user2.address, tokenId);
+      await erc721
+        .connect(user1)
+        .transferFrom(user1.address, user2.address, tokenId);
+      expect(await erc721.ownerOf(tokenId)).to.equal(user2.address);
+      await expect(
+        nftAuction
+          .connect(user2)
+          .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
+            value: minPrice,
+          })
+      ).to.be.revertedWith("Seller doesn't own NFT");
+    });
     it("should ensure owner cannot bid on own NFT", async function () {
       await expect(
         nftAuction
@@ -180,7 +203,7 @@ describe("NFTAuction Bids", function () {
               value: minPrice,
             }
           )
-      ).to.be.revertedWith("cannot specify 0 address");
+      ).to.be.revertedWith("Cannot specify 0 address");
     });
 
     it("should allow bidder to buy NFT by meeting buyNowPrice", async function () {

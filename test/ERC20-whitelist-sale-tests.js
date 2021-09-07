@@ -111,8 +111,7 @@ describe("ERC20 Whitelist Sale Tests", function () {
         nftAuction
           .connect(user3)
           .makeBid(erc721.address, tokenId, erc20.address, buyNowPrice)
-      ).to.be.revertedWith("only the whitelisted buyer can bid on this NFT");
-      expect(await erc721.ownerOf(tokenId)).to.equal(nftAuction.address);
+      ).to.be.revertedWith("Only the whitelisted buyer");
     });
     //test buyer can't purchase nft below the minimum price
     it("should allow whitelist buyer to bid below sale price", async function () {
@@ -137,7 +136,7 @@ describe("ERC20 Whitelist Sale Tests", function () {
         nftAuction
           .connect(user2)
           .makeBid(erc721.address, tokenId, erc20.address, buyNowPrice)
-      ).to.be.revertedWith("only the whitelisted buyer can bid on this NFT");
+      ).to.be.revertedWith("Only the whitelisted buyer");
       await nftAuction
         .connect(user3)
         .makeBid(erc721.address, tokenId, erc20.address, buyNowPrice);
@@ -154,7 +153,7 @@ describe("ERC20 Whitelist Sale Tests", function () {
       await nftAuction
         .connect(user1)
         .updateWhitelistedBuyer(erc721.address, tokenId, user3.address);
-      expect(await erc721.ownerOf(tokenId)).to.equal(nftAuction.address);
+      expect(await erc721.ownerOf(tokenId)).to.equal(user1.address);
       result = await nftAuction.nftContractAuctions(erc721.address, tokenId);
 
       expect(result.buyNowPrice).to.be.not.equal(BigNumber.from(0).toString());
@@ -168,7 +167,7 @@ describe("ERC20 Whitelist Sale Tests", function () {
         nftAuction
           .connect(user2)
           .updateWhitelistedBuyer(erc721.address, tokenId, user3.address)
-      ).to.be.revertedWith("Only the owner can call this function");
+      ).to.be.revertedWith("Only nft seller");
     });
     it("should not allow user to update min price for a sale", async function () {
       let newMinPrice = 15000;

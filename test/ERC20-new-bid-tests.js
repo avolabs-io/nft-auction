@@ -108,9 +108,7 @@ describe("ERC20 New Bid Tests", function () {
           .makeBid(erc721.address, tokenId, erc20.address, minPrice, {
             value: minPrice,
           })
-      ).to.be.revertedWith(
-        "Bid to be made in quantities of specified token or eth"
-      );
+      ).to.be.revertedWith("Bid to be in specified ERC20/Eth");
     });
 
     it("should not allow bid lower than minimum bid percentage", async function () {
@@ -199,7 +197,7 @@ describe("ERC20 New Bid Tests", function () {
             minPrice,
             zeroAddress
           )
-      ).to.be.revertedWith("cannot specify 0 address");
+      ).to.be.revertedWith("Cannot specify 0 address");
     });
     it("should not allow user to bid with another ERC20 token", async function () {
       await expect(
@@ -212,18 +210,14 @@ describe("ERC20 New Bid Tests", function () {
             minPrice,
             user3.address
           )
-      ).to.be.revertedWith(
-        "Bid to be made in quantities of specified token or eth"
-      );
+      ).to.be.revertedWith("Bid to be in specified ERC20/Eth");
     });
     it("should not allow user to set 0 tokenAmount and 0 Eth amount", async function () {
       await expect(
         nftAuction
           .connect(user2)
           .makeBid(erc721.address, tokenId, erc20.address, zeroERC20Tokens)
-      ).to.be.revertedWith(
-        "Bid to be made in quantities of specified token or eth"
-      );
+      ).to.be.revertedWith("Bid to be in specified ERC20/Eth");
     });
     it("should allow bidder to buy NFT by meeting buyNowPrice", async function () {
       await nftAuction
@@ -390,9 +384,7 @@ describe("ERC20 New Bid Tests", function () {
         nftAuction
           .connect(user2)
           .makeBid(erc721.address, tokenId, erc20.address, minPrice)
-      ).to.be.revertedWith(
-        "Bid to be made in quantities of specified token or eth"
-      );
+      ).to.be.revertedWith("Bid to be in specified ERC20/Eth");
     });
   });
 });

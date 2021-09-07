@@ -58,7 +58,7 @@ describe("ERC20 New Auction Tests", function () {
       BigNumber.from(minPrice).toString()
     );
   });
-  it("Calling newNftAuction transfers NFT to contract", async function () {
+  it("Calling newNftAuction does not transfers NFT to contract", async function () {
     await nftAuction
       .connect(user1)
       .createNewNftAuction(
@@ -73,7 +73,7 @@ describe("ERC20 New Auction Tests", function () {
         emptyFeePercentages
       );
 
-    expect(await erc721.ownerOf(tokenId)).to.equal(nftAuction.address);
+    expect(await erc721.ownerOf(tokenId)).to.equal(user1.address);
   });
 
   it("should not allow minimum bid increase percentage below minimum settable value", async function () {
@@ -91,9 +91,7 @@ describe("ERC20 New Auction Tests", function () {
           emptyFeeRecipients,
           emptyFeePercentages
         )
-    ).to.be.revertedWith(
-      "Bid increase percentage must be greater than minimum settable increase percentage"
-    );
+    ).to.be.revertedWith("Bid increase percentage too low");
   });
 
   it("should revert new auction with MinPrice of 0", async function () {
@@ -127,7 +125,9 @@ describe("ERC20 New Auction Tests", function () {
         emptyFeePercentages
       );
 
-    expect(await erc721.ownerOf(tokenId)).to.equal(nftAuction.address);
+    let result = await nftAuction.nftContractAuctions(erc721.address, tokenId);
+
+    expect(result.nftSeller).to.equal(user1.address);
   });
   it("should not allow minimum bid increase percentage below minimum settable value", async function () {
     await expect(
@@ -144,9 +144,7 @@ describe("ERC20 New Auction Tests", function () {
           emptyFeeRecipients,
           emptyFeePercentages
         )
-    ).to.be.revertedWith(
-      "Bid increase percentage must be greater than minimum settable increase percentage"
-    );
+    ).to.be.revertedWith("Bid increase percentage too low");
   });
 
   it("should revert new auction with MinPrice & BuyNowPrice of 0", async function () {
@@ -181,7 +179,7 @@ describe("ERC20 New Auction Tests", function () {
           emptyFeeRecipients,
           emptyFeePercentages
         )
-    ).to.be.revertedWith("Min price cannot exceed 80% of buyNowPrice");
+    ).to.be.revertedWith("MinPrice > 80% of buyNowPrice");
   });
 
   describe("Test when no bids made on new auction", function () {
@@ -198,23 +196,30 @@ describe("ERC20 New Auction Tests", function () {
           emptyFeePercentages
         );
     });
-    it("should allow seller to withdraw NFT if no bids made", async function () {
-      expect(await erc721.ownerOf(tokenId)).to.equal(nftAuction.address);
-      await nftAuction.connect(user1).withdrawNft(erc721.address, tokenId);
+    it("should allow seller to withdraw Auction if no bids made", async function () {
+      let result = await nftAuction.nftContractAuctions(
+        erc721.address,
+        tokenId
+      );
+      expect(result.nftSeller).to.be.equal(user1.address);
       expect(await erc721.ownerOf(tokenId)).to.equal(user1.address);
+      await nftAuction.connect(user1).withdrawAuction(erc721.address, tokenId);
+
+      result = await nftAuction.nftContractAuctions(erc721.address, tokenId);
+      expect(result.nftSeller).to.be.equal(zeroAddress);
     });
     it("should reset auction when NFT withdrawn", async function () {
-      await nftAuction.connect(user1).withdrawNft(erc721.address, tokenId);
+      await nftAuction.connect(user1).withdrawAuction(erc721.address, tokenId);
       let result = await nftAuction.nftContractAuctions(
         erc721.address,
         tokenId
       );
       expect(result.ERC20Token).to.be.equal(zeroAddress);
     });
-    it("should not allow other users to withdraw NFT", async function () {
+    it("should not allow other users to reset auction", async function () {
       await expect(
-        nftAuction.connect(user2).withdrawNft(erc721.address, tokenId)
-      ).to.be.revertedWith("Only the owner can call this function");
+        nftAuction.connect(user2).withdrawAuction(erc721.address, tokenId)
+      ).to.be.revertedWith("Not NFT owner");
     });
     it("should revert when trying to update whitelisted buyer", async function () {
       await expect(
@@ -240,7 +245,7 @@ describe("ERC20 New Auction Tests", function () {
         nftAuction
           .connect(user1)
           .updateMinimumPrice(erc721.address, tokenId, buyNowPrice + 1)
-      ).to.be.revertedWith("Min price cannot exceed 80% of buyNowPrice");
+      ).to.be.revertedWith("MinPrice > 80% of buyNowPrice");
     });
     it("should not allow seller to take highest bid when no bid made", async function () {
       await expect(
@@ -264,7 +269,7 @@ describe("ERC20 New Auction Tests", function () {
         nftAuction
           .connect(user2)
           .updateMinimumPrice(erc721.address, tokenId, newMinPrice)
-      ).to.be.revertedWith("Only the owner can call this function");
+      ).to.be.revertedWith("Only nft seller");
     });
   });
 });

@@ -48,7 +48,7 @@ describe("NFTAuction", function () {
     expect(await erc721.ownerOf(tokenId)).to.equal(user1.address);
   });
 
-  it("Calling newNftAuction transfers NFT to contract", async function () {
+  it("Calling newNftAuction creates auction", async function () {
     await nftAuction
       .connect(user1)
       .createNewNftAuction(
@@ -62,8 +62,8 @@ describe("NFTAuction", function () {
         emptyFeeRecipients,
         emptyFeePercentages
       );
-
-    expect(await erc721.ownerOf(tokenId)).to.equal(nftAuction.address);
+    let result = await nftAuction.nftContractAuctions(erc721.address, tokenId);
+    expect(result.nftSeller).to.equal(user1.address);
   });
   it("transferring nft token directly to contract", async function () {
     await erc721
@@ -87,9 +87,7 @@ describe("NFTAuction", function () {
           emptyFeeRecipients,
           emptyFeePercentages
         )
-    ).to.be.revertedWith(
-      "Bid increase percentage must be greater than minimum settable increase percentage"
-    );
+    ).to.be.revertedWith("Bid increase percentage too low");
   });
 
   it("should revert new auction with MinPrice & BuyNowPrice of 0", async function () {
@@ -124,7 +122,7 @@ describe("NFTAuction", function () {
           emptyFeeRecipients,
           emptyFeePercentages
         )
-    ).to.be.revertedWith("Min price cannot exceed 80% of buyNowPrice");
+    ).to.be.revertedWith("MinPrice > 80% of buyNowPrice");
   });
 
   it("should allow seller to create default Auction", async function () {
@@ -139,8 +137,8 @@ describe("NFTAuction", function () {
         emptyFeeRecipients,
         emptyFeePercentages
       );
-
-    expect(await erc721.ownerOf(tokenId)).to.equal(nftAuction.address);
+    let result = await nftAuction.nftContractAuctions(erc721.address, tokenId);
+    expect(result.nftSeller).to.equal(user1.address);
   });
   it("should allow seller to set 0 buyNowPrice", async function () {
     await nftAuction
@@ -154,7 +152,8 @@ describe("NFTAuction", function () {
         emptyFeeRecipients,
         emptyFeePercentages
       );
-    expect(await erc721.ownerOf(tokenId)).to.equal(nftAuction.address);
+    let result = await nftAuction.nftContractAuctions(erc721.address, tokenId);
+    expect(result.nftSeller).to.equal(user1.address);
   });
   it("shoulld allow seller to specify fees", async function () {
     await nftAuction
@@ -168,7 +167,8 @@ describe("NFTAuction", function () {
         feeRecipients,
         feePercentages
       );
-    expect(await erc721.ownerOf(tokenId)).to.equal(nftAuction.address);
+    let result = await nftAuction.nftContractAuctions(erc721.address, tokenId);
+    expect(result.nftSeller).to.equal(user1.address);
   });
   it("shoulld revert if fees exceed 100%", async function () {
     feePercentages = [9900, 1200]; // max = 10000
@@ -184,7 +184,7 @@ describe("NFTAuction", function () {
           feeRecipients,
           feePercentages
         )
-    ).to.be.revertedWith("fee percentages exceed maximum");
+    ).to.be.revertedWith("Fee percentages exceed maximum");
   });
   it("shoulld revert if recipients and percentages do not align", async function () {
     feePercentages = [1000];
@@ -200,7 +200,7 @@ describe("NFTAuction", function () {
           feeRecipients,
           feePercentages
         )
-    ).to.be.revertedWith("mismatched fee recipients and percentages");
+    ).to.be.revertedWith("Recipients != percentages");
   });
 
   describe("Test when no bids made on new auction", function () {
@@ -217,13 +217,68 @@ describe("NFTAuction", function () {
           emptyFeePercentages
         );
     });
-    it("should allow seller to withdraw NFT if no bids made", async function () {
-      expect(await erc721.ownerOf(tokenId)).to.equal(nftAuction.address);
-      await nftAuction.connect(user1).withdrawNft(erc721.address, tokenId);
-      expect(await erc721.ownerOf(tokenId)).to.equal(user1.address);
+    it("should not allow owner to create another auction", async function () {
+      await expect(
+        nftAuction
+          .connect(user1)
+          .createDefaultNftAuction(
+            erc721.address,
+            tokenId,
+            zeroAddress,
+            minPrice,
+            buyNowPrice,
+            emptyFeeRecipients,
+            emptyFeePercentages
+          )
+      ).to.be.revertedWith("Auction already started by owner");
     });
-    it("should reset auction when NFT withdrawn", async function () {
-      await nftAuction.connect(user1).withdrawNft(erc721.address, tokenId);
+    it("should reset auction if NFT transferred to different owner", async function () {
+      await erc721.connect(user1).approve(user2.address, tokenId);
+      await erc721
+        .connect(user1)
+        .transferFrom(user1.address, user2.address, tokenId);
+      let result = await nftAuction.nftContractAuctions(
+        erc721.address,
+        tokenId
+      );
+      expect(result.nftSeller).to.be.equal(user1.address);
+      await nftAuction
+        .connect(user2)
+        .createDefaultNftAuction(
+          erc721.address,
+          tokenId,
+          zeroAddress,
+          newMinPrice,
+          buyNowPrice,
+          emptyFeeRecipients,
+          emptyFeePercentages
+        );
+
+      result = await nftAuction.nftContractAuctions(erc721.address, tokenId);
+      expect(result.nftSeller).to.be.equal(user2.address);
+      expect(result.minPrice.toString()).to.be.equal(
+        BigNumber.from(newMinPrice).toString()
+      );
+    });
+
+    it("should not allow non owner  to create auction", async function () {
+      await expect(
+        nftAuction
+          .connect(user2)
+          .createDefaultNftAuction(
+            erc721.address,
+            tokenId,
+            zeroAddress,
+            newMinPrice,
+            buyNowPrice,
+            emptyFeeRecipients,
+            emptyFeePercentages
+          )
+      ).to.be.revertedWith("Sender doesn't own NFT");
+    });
+
+    it("should reset auction when Auction withdrawn", async function () {
+      await nftAuction.connect(user1).withdrawAuction(erc721.address, tokenId);
       let result = await nftAuction.nftContractAuctions(
         erc721.address,
         tokenId
@@ -239,7 +294,12 @@ describe("NFTAuction", function () {
     it("should not allow other users to withdraw NFT", async function () {
       await expect(
         nftAuction.connect(user2).withdrawNft(erc721.address, tokenId)
-      ).to.be.revertedWith("Only the owner can call this function");
+      ).to.be.revertedWith("Only nft seller");
+    });
+    it("should not allow other users to withdraw Auction", async function () {
+      await expect(
+        nftAuction.connect(user2).withdrawAuction(erc721.address, tokenId)
+      ).to.be.revertedWith("Not NFT owner");
     });
     it("should revert when trying to update whitelisted buyer", async function () {
       await expect(
@@ -265,7 +325,7 @@ describe("NFTAuction", function () {
         nftAuction
           .connect(user1)
           .updateMinimumPrice(erc721.address, tokenId, buyNowPrice + 1)
-      ).to.be.revertedWith("Min price cannot exceed 80% of buyNowPrice");
+      ).to.be.revertedWith("MinPrice > 80% of buyNowPrice");
     });
     it("should not allow seller to take highest bid when no bid made", async function () {
       await expect(
@@ -289,7 +349,7 @@ describe("NFTAuction", function () {
         nftAuction
           .connect(user2)
           .updateMinimumPrice(erc721.address, tokenId, newMinPrice)
-      ).to.be.revertedWith("Only the owner can call this function");
+      ).to.be.revertedWith("Only nft seller");
     });
     it("should allow users to query NFT depositer", async function () {
       expect(await nftAuction.ownerOfNFT(erc721.address, tokenId)).to.be.equal(

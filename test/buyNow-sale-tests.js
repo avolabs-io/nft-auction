@@ -15,7 +15,7 @@ const zeroERC20Tokens = 0;
 
 // Deploy and create a mock erc721 contract.
 
-describe("Sale tests", function () {
+describe("BuyNow Sale tests", function () {
   let ERC721;
   let erc721;
   let NFTAuction;
@@ -127,7 +127,7 @@ describe("Sale tests", function () {
           .makeBid(erc721.address, tokenId, zeroAddress, 0, {
             value: buyNowPrice,
           })
-      ).to.be.revertedWith("only the whitelisted buyer can bid on this NFT");
+      ).to.be.revertedWith("Only the whitelisted buyer");
       await nftAuction
         .connect(user3)
         .makeBid(erc721.address, tokenId, zeroAddress, 0, {
@@ -140,7 +140,7 @@ describe("Sale tests", function () {
         nftAuction
           .connect(user2)
           .updateWhitelistedBuyer(erc721.address, tokenId, user3.address)
-      ).to.be.revertedWith("Only the owner can call this function");
+      ).to.be.revertedWith("Only nft seller");
     });
     it("should not allow user to update min price for a sale", async function () {
       let newMinPrice = 15000;
