@@ -98,6 +98,30 @@ describe("NFTAuction Bids", function () {
           })
       ).to.be.revertedWith("Seller doesn't own NFT");
     });
+    it("should revert if owner removes contract approval and minPrice is met", async function () {
+      await erc721.connect(user1).approve(zeroAddress, tokenId);
+      await expect(
+        nftAuction
+          .connect(user2)
+          .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
+            value: minPrice,
+          })
+      ).to.be.revertedWith("ERC721: transfer caller is not owner nor approved");
+    });
+    it("should revert if owner transfer nft and minPrice is met", async function () {
+      await erc721.connect(user1).approve(user2.address, tokenId);
+      await erc721
+        .connect(user1)
+        .transferFrom(user1.address, user2.address, tokenId);
+      expect(await erc721.ownerOf(tokenId)).to.equal(user2.address);
+      await expect(
+        nftAuction
+          .connect(user2)
+          .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
+            value: minPrice,
+          })
+      ).to.be.revertedWith("Seller doesn't own NFT");
+    });
     it("should ensure owner cannot bid on own NFT", async function () {
       await expect(
         nftAuction
@@ -146,16 +170,6 @@ describe("NFTAuction Bids", function () {
       );
     });
 
-    it("should not allow owner to withdraw NFT if valid bid made", async function () {
-      await nftAuction
-        .connect(user2)
-        .makeBid(erc721.address, tokenId, zeroAddress, zeroERC20Tokens, {
-          value: minPrice,
-        });
-      await expect(
-        nftAuction.connect(user1).withdrawNft(erc721.address, tokenId)
-      ).to.be.revertedWith("The auction has a valid bid made");
-    });
     it("should not allow bidder to withdraw if min price exceeded", async function () {
       await nftAuction
         .connect(user2)

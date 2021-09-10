@@ -16,7 +16,7 @@ const emptyFeePercentages = [];
 
 // Deploy and create a mock erc721 contract.
 // Test end to end auction
-describe("Batch Auction", function () {
+describe.skip("Batch Auction", function () {
   let ERC721;
   let erc721;
   let NFTAuction;

@@ -150,14 +150,6 @@ describe("ERC20 New Bid Tests", function () {
         BigNumber.from(bidIncreaseByMinPercentage).toString()
       );
     });
-    it("should not allow owner to withdraw NFT if valid bid made", async function () {
-      await nftAuction
-        .connect(user2)
-        .makeBid(erc721.address, tokenId, erc20.address, minPrice);
-      await expect(
-        nftAuction.connect(user1).withdrawNft(erc721.address, tokenId)
-      ).to.be.revertedWith("The auction has a valid bid made");
-    });
     it("should not allow bidder to withdraw if min price exceeded", async function () {
       await nftAuction
         .connect(user2)
