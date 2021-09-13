@@ -324,9 +324,9 @@ contract NFTAuction {
     /**********************************/
     // constructor
     constructor() {
-        defaultBidIncreasePercentage = 1000;
+        defaultBidIncreasePercentage = 100;
         defaultAuctionBidPeriod = 86400; //1 day
-        minimumSettableIncreasePercentage = 500;
+        minimumSettableIncreasePercentage = 100;
         maximumMinPricePercentage = 8000;
     }
 
@@ -1222,7 +1222,10 @@ contract NFTAuction {
             IERC20(auctionERC20Token).transfer(_recipient, _amount);
         } else {
             // attempt to send the funds to the recipient
-            (bool success, ) = payable(_recipient).call{value: _amount}("");
+            (bool success, ) = payable(_recipient).call{
+                value: _amount,
+                gas: 20000
+            }("");
             // if it failed, update their credit balance so they can pull it later
             if (!success) {
                 failedTransferCredits[_recipient] =
@@ -1416,7 +1419,10 @@ contract NFTAuction {
 
         failedTransferCredits[msg.sender] = 0;
 
-        (bool successfulWithdraw, ) = msg.sender.call{value: amount}("");
+        (bool successfulWithdraw, ) = msg.sender.call{
+            value: amount,
+            gas: 20000
+        }("");
         require(successfulWithdraw, "withdraw failed");
     }
 

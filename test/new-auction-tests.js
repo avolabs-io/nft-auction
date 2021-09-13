@@ -83,7 +83,7 @@ describe("NFTAuction", function () {
           minPrice,
           buyNowPrice,
           auctionBidPeriod,
-          4,
+          40,
           emptyFeeRecipients,
           emptyFeePercentages
         )

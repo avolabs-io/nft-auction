@@ -87,7 +87,7 @@ describe("ERC20 New Auction Tests", function () {
           minPrice,
           buyNowPrice,
           auctionBidPeriod,
-          400,
+          50,
           emptyFeeRecipients,
           emptyFeePercentages
         )
@@ -128,23 +128,6 @@ describe("ERC20 New Auction Tests", function () {
     let result = await nftAuction.nftContractAuctions(erc721.address, tokenId);
 
     expect(result.nftSeller).to.equal(user1.address);
-  });
-  it("should not allow minimum bid increase percentage below minimum settable value", async function () {
-    await expect(
-      nftAuction
-        .connect(user1)
-        .createNewNftAuction(
-          erc721.address,
-          tokenId,
-          erc20.address,
-          minPrice,
-          buyNowPrice,
-          auctionBidPeriod,
-          400,
-          emptyFeeRecipients,
-          emptyFeePercentages
-        )
-    ).to.be.revertedWith("Bid increase percentage too low");
   });
 
   it("should revert new auction with MinPrice & BuyNowPrice of 0", async function () {
