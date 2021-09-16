@@ -339,7 +339,7 @@ describe("NFTAuction Bids", function () {
       expect(result.nftHighestBidder).to.be.equal(zeroAddress);
     });
     it("should transfer the correct amount to the bidder if they withdraw", async function () {
-      const gasPrice = 1;
+      const gasPrice = 8;
       const tx = await nftAuction
         .connect(user2)
         .withdrawBid(erc721.address, tokenId, { gasPrice: gasPrice });
