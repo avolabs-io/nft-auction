@@ -6,7 +6,7 @@ Smart contracts that allow the flexible auction of NFTs
 
 ## Unstoppable Auctions
 
-This repository contains the smart contracts source code for the Unstoppable Auction Protocol. The repository uses Hardhat as development enviroment for compilation, testing and deployment tasks.
+This repository contains the smart contracts source code for the Unstoppable Auction Protocol. The repository uses Hardhat as development environment for compilation, testing and deployment tasks.
 
 ## How does the Unstoppable Auction functionality work?
 
@@ -14,9 +14,9 @@ The open source smart contract can be easily used in a permissionless and flexib
 
 ## Smart Contract bounty
 
-Although these smart contracts have been thoroughly tested, we cannot guarentee the absence of bugs. Please report any findings / attack vectors / gas optimizations to bounty@avolabs.io. There is a bounty payout 💰 for your reported findings, awarded at the sole discretion of the bounty sponsor (Async Art). These contracts are for the community and your help would be greatly appreciated by many.
+Although these smart contracts have been thoroughly tested, we cannot guarantee the absence of bugs. Please report any findings / attack vectors / gas optimizations to bounty@avolabs.io. There is a bounty payout 💰 for your reported findings, awarded at the sole discretion of the bounty sponsor (Async Art). These contracts are for the community and your help would be greatly appreciated by many.
 
-Note that many factors such as the serverity of the bug, the submission of duplicates and the timeliness of the submission will be some of the factors involved in determining the size of the applicable bounty.
+Note that many factors such as the severity of the bug, the submission of duplicates and the timeliness of the submission will be some of the factors involved in determining the size of the applicable bounty.
 
 # NFT sellers can perform the following actions to sell or auction their NFTs:
 
@@ -50,7 +50,7 @@ Users can also make early bids on single NFTs. This allows users to bid on an NF
 
 Sellers can:
 
-- Withdraw their auction if the minimum price of the auction has not yet been met, or at anytime when put up for sale as long as the buy now price has not yet been met (in this case, the seller would not be the owner of the NFT as it would be tranferred to the highest bidder or their specified recipient).
+- Withdraw their auction if the minimum price of the auction has not yet been met, or at anytime when put up for sale as long as the buy now price has not yet been met (in this case, the seller would not be the owner of the NFT as it would be transferred to the highest bidder or their specified recipient).
 - Update the whitelisted buyer in the case of a sale.
 - Update the minimum price of the auction. This can only be done if no bid has been made that already exceeds the original minimum price. The new minimum price is still limited to 80% of the buy now price if set. if an underbid has been made on the auction, and this update would mean that the minimum price is met by that underbid, then the auction would begin.
 - Update the buy now price of the auction or sale. In the case of an auction the buy now price cannot be set to an amount which would make the minimum price greater than 80% of the buy now price. If a bid has been made on an auction or sale, and this update would mean that this bid now meets the buy now price, then the auction or sale would be concluded and the NFT and bid amount would be distributed accordingly.
