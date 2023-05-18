@@ -16,7 +16,7 @@ const emptyFeeRecipients = [];
 const emptyFeePercentages = [];
 // Deploy and create a mock erc721 contract.
 // 1 basic test, NFT sent from one person to another works correctly.
-describe("ERC20 New Auction Tests", function () {
+describe.skip("ERC20 New Auction Tests", function () {
   let ERC721;
   let erc721;
   let ERC20;

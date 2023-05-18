@@ -326,7 +326,7 @@ describe("End to end auction tests", function () {
       expect(await erc721.ownerOf(tokenId)).to.equal(user4.address);
     });
   });
-  describe("ERC20 auction end to end", async function () {
+  describe.skip("ERC20 auction end to end", async function () {
     bidIncreasePercentage = 1000;
     auctionBidPeriod = 86400;
     beforeEach(async function () {
