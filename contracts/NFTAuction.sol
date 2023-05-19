@@ -784,8 +784,7 @@ contract NFTAuction {
         isFeePercentagesLessThanMaximum(_feePercentages)
     {
         if (_erc20Token != address(0)) {
-            nftContractAuctions[_nftContractAddress][_tokenId]
-                .ERC20Token = _erc20Token;
+            revert("Disabled ERC20 functionality");
         }
         nftContractAuctions[_nftContractAddress][_tokenId]
             .feeRecipients = _feeRecipients;
