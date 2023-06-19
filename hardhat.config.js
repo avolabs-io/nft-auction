@@ -30,7 +30,7 @@ const RINKEBY_PRIVATE_KEY = rinkebyPrivateKey;
  */
 module.exports = {
   solidity: {
-    version: "0.8.4",
+    version: "0.8.19",
     settings: {
       optimizer: {
         enabled: true,
