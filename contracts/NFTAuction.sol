@@ -153,7 +153,7 @@ contract NFTAuction {
                 msg.sender == IERC721(_nftContractAddress).ownerOf(_tokenId),
                 "Sender doesn't own NFT"
             );
-
+            _reverseAndResetPreviousBid(_nftContractAddress, _tokenId);
             _resetAuction(_nftContractAddress, _tokenId);
         }
         _;
@@ -1086,8 +1086,9 @@ contract NFTAuction {
             _tokenId
         ].nftHighestBid;
         _resetBids(_nftContractAddress, _tokenId);
-
+        if (nftHighestBidder != address(0)) {
         _payout(_nftContractAddress, _tokenId, nftHighestBidder, nftHighestBid);
+        }
     }
 
     function _reversePreviousBidAndUpdateHighestBid(
@@ -1252,6 +1253,7 @@ contract NFTAuction {
             IERC721(_nftContractAddress).ownerOf(_tokenId) == msg.sender,
             "Not NFT owner"
         );
+         _reverseAndResetPreviousBid(_nftContractAddress, _tokenId);
         _resetAuction(_nftContractAddress, _tokenId);
         emit AuctionWithdrawn(_nftContractAddress, _tokenId, msg.sender);
     }
