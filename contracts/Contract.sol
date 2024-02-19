@@ -28,9 +28,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "operator-filter-registry-1.3.1/src/DefaultOperatorFilterer.sol";
-import "./lib/auctions/DutchAuctionHouse.sol";
 import "./lib/auctions/EnglishAuctionHouse.sol";
-import "./lib/MerkleFourParams.sol";
 import "./lib/IWCNFTErrorCodes.sol";
 import "./lib/WCNFTToken.sol";
 
@@ -38,9 +36,7 @@ contract CryptoCitiesSuburbs is
     IWCNFTErrorCodes,
     ReentrancyGuard,
     DefaultOperatorFilterer,
-    DutchAuctionHouse,
     EnglishAuctionHouse,
-    MerkleFourParams,
     Ownable,
     WCNFTToken,
     ERC721
@@ -59,21 +55,17 @@ contract CryptoCitiesSuburbs is
     struct Suburb {
         uint256 id; // 1, 2, 3... etc. local to each City, starts at 1
         uint256 cityId; // parent City
-        uint256 dutchAuctionId; // identifier of current DutchAuction, see DutchAuctionHouse.sol
         uint256 englishAuctionId; // identifier of current EnglishAuction, see EnglishAuctionHouse.sol
         uint256 firstTokenId;
         uint256 maxSupply;
         uint256 currentSupply;
         uint256 pricePerToken;
-        uint256 allowListPricePerToken;
-        bool allowListActive;
         bool saleActive;
     }
 
     // State vars
     uint256 public numberOfCities;
     uint256 public totalSupply; // cumulative over all cities and suburbs
-    uint256 public maxDutchAuctionMints = 1;
     string private _baseURIOverride; // override per-City baseURIs
     address public immutable shareholderAddress;
 
@@ -89,9 +81,6 @@ contract CryptoCitiesSuburbs is
 
     /// cities and suburbs cannot be removed if they are not empty
     error CityOrSuburbNotEmpty();
-
-    /// action would exceed token or mint allowance
-    error ExceedsMaximumTokensDuringDutchAuction();
 
     /// action would exceed the maximum token supply of this Suburb
     error ExceedsSuburbMaximumSupply();
@@ -126,18 +115,6 @@ contract CryptoCitiesSuburbs is
     /**************************************************************************
      * EVENTS
      */
-
-    /**
-     * @dev emitted when a Dutch auction is created and assigned to a Suburb
-     * @param cityId the City hosting the Dutch auction
-     * @param suburbId the Suburb hosting the Dutch auction
-     * @param dutchAuctionId auction ID, see {DutchAuctionHouse}
-     */
-    event DutchAuctionCreatedInSuburb(
-        uint256 indexed cityId,
-        uint256 indexed suburbId,
-        uint256 dutchAuctionId
-    );
 
     /**
      * @dev emitted when an English Auction is created and assigned to a Suburb
@@ -192,7 +169,6 @@ contract CryptoCitiesSuburbs is
      */
     function _revertIfAnySaleActive(Suburb storage s) internal view {
         if (s.saleActive) revert SaleIsActive();
-        if (s.allowListActive) revert AllowListIsActive();
     }
 
     /**
@@ -200,10 +176,6 @@ contract CryptoCitiesSuburbs is
      * @param s Suburb to query
      */
     function _revertIfAnyAuctionActive(Suburb storage s) internal view {
-        if (_checkDutchAuctionActive(s.dutchAuctionId)) {
-            revert DutchAuctionIsActive();
-        }
-
         // revert if an EA is active, or is ended-but-not-settled
         if (_englishAuctionActiveNotSettled(s.englishAuctionId)) {
             revert EnglishAuctionIsNotComplete();
@@ -260,16 +232,14 @@ contract CryptoCitiesSuburbs is
      * @param maxSupplyInSuburb the number of available tokens in this Suburb,
      *  including all sale types.
      * @param pricePerToken_ price per token in wei, on the public sale.
-     * @param allowListPricePerToken_ allowList price per token in wei. Set to
-     *  an arbitrary value if there will be no allow list sale for this Suburb.
+
      * @return newSuburbId ID for the newly created Suburb - use in
      *  suburbs(cityId, suburbId) to get Suburb info.
      */
     function addSuburb(
         uint256 cityId_,
         uint256 maxSupplyInSuburb,
-        uint256 pricePerToken_,
-        uint256 allowListPricePerToken_
+        uint256 pricePerToken_
     ) external onlyRole(SUPPORT_ROLE) returns (uint256) {
         // Incrementing token IDs means suburbs can only be added to the most
         // recent City
@@ -299,10 +269,7 @@ contract CryptoCitiesSuburbs is
             maxSupply: maxSupplyInSuburb,
             currentSupply: 0,
             pricePerToken: pricePerToken_,
-            allowListPricePerToken: allowListPricePerToken_,
-            dutchAuctionId: 0,
             englishAuctionId: 0,
-            allowListActive: false,
             saleActive: false
         });
 

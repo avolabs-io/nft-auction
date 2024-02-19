@@ -1,6 +1,6 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.19;
-import "./NFTAuction.sol";
+import "./Contract.sol";
 
 contract attackerContract {
     uint256 public balanceOfContract;
