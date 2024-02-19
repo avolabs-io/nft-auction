@@ -16,7 +16,7 @@ contract NFTAuction {
     struct Auction {
         //map token ID to
         uint32 bidIncreasePercentage;
-        uint32 auctionBidPeriod; //Increments the length of time the auction is open in which a new bid can be made after each bid.
+        uint32 auctionBidPeriod; //Increments the    length of time the auction is open in which a new bid can be made after each bid.
         uint64 auctionEnd;
         uint128 minPrice;
         uint128 buyNowPrice;
