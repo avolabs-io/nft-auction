@@ -16,6 +16,7 @@ contract EnglishAuctionHouse is IWCNFTErrorCodes {
 
     uint256 public numberOfEnglishAuctions;
     uint256 private constant _MAXIMUM_START_DELAY = 1 weeks;
+    uint256 private constant _EXTEND_PERIOD = 15 minutes;
     uint256 private constant _MAXIMUM_DURATION = 1 weeks;
     uint256 private constant _MINIMUM_DURATION = 1 hours;
     uint256 private constant _MINIMUM_TIME_BUFFER = 2 hours; // cannot stop auction within 2 hours of end
@@ -422,10 +423,18 @@ contract EnglishAuctionHouse is IWCNFTErrorCodes {
             if (msg.value < currentBid + ea.outbidBuffer) {
                 revert BidTooLow();
             } else {
+                if ((block.timestamp - ea.endTime) < _EXTEND_PERIOD) {
+                    if ((block.timestamp - ea.startTime) > _MAXIMUM_DURATION) {
+                        revert ExceedsMaximumDuration();
+                    }
+                    // extend the auction by 15 minutes
+                    ea.endTime = block.timestamp + _EXTEND_PERIOD;
+                }
                 // we have a new highest bid
                 ea.highestBid = msg.value;
                 ea.highestBidder = msg.sender;
                 emit NewHighBid(auctionId, msg.sender, msg.value);
+
 
                 // refund the previous highest bidder.
                 // This must not revert due to the receiver.
