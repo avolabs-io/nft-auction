@@ -16,10 +16,10 @@ contract EnglishAuctionHouse is IWCNFTErrorCodes {
 
     uint256 public numberOfEnglishAuctions;
     uint256 private constant _MAXIMUM_START_DELAY = 1 weeks;
-    uint256 private constant _EXTEND_PERIOD = 15 minutes;
     uint256 private constant _MAXIMUM_DURATION = 1 weeks;
     uint256 private constant _MINIMUM_DURATION = 1 hours;
     uint256 private constant _MINIMUM_TIME_BUFFER = 2 hours; // cannot stop auction within 2 hours of end
+    uint256 private constant _MINIMUM_EXTEND_PERIOD = 15 minutes;
     uint256 private _maxRefundGas = 2300; // max gas sent with refunds
     mapping(uint256 => EnglishAuction) internal _englishAuctions;
 
@@ -423,12 +423,12 @@ contract EnglishAuctionHouse is IWCNFTErrorCodes {
             if (msg.value < currentBid + ea.outbidBuffer) {
                 revert BidTooLow();
             } else {
-                if ((block.timestamp - ea.endTime) < _EXTEND_PERIOD) {
-                    if ((block.timestamp - ea.startTime) > _MAXIMUM_DURATION) {
-                        revert ExceedsMaximumDuration();
+                // extend the auction if less than 15 minutes remaining 
+                if ((ea.endTime - block.timestamp) < _MINIMUM_EXTEND_PERIOD) {
+                    // only extend if total auction time will not exceed _MAXIMUM_DURATION
+                    if ((block.timestamp - ea.startTime) < (_MAXIMUM_DURATION - _MINIMUM_EXTEND_PERIOD)) {
+                        ea.endTime = block.timestamp + _MINIMUM_EXTEND_PERIOD;
                     }
-                    // extend the auction by 15 minutes
-                    ea.endTime = block.timestamp + _EXTEND_PERIOD;
                 }
                 // we have a new highest bid
                 ea.highestBid = msg.value;
